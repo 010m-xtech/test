@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>カメラテスト</title>
+    <style>
+        /* 見た目を少し整える */
+        #preview { width: 100%; max-width: 400px; margin-top: 20px; display: none; border-radius: 10px; }
+        .btn { padding: 10px 20px; background: #ff6600; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <h2>写真を撮って表示しよう！</h2>
+    
+    <input type="file" id="camera" accept="image/*" capture="environment" style="display:none;">
+    <button class="btn" onclick="document.getElementById('camera').click()">カメラを起動</button>
+
+    <div id="container">
+        <img id="preview" src="" alt="撮った写真">
+    </div>
+
+    <script>
+        const cameraInput = document.getElementById('camera');
+        const preview = document.getElementById('preview');
+
+        cameraInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // 読み込んだファイルをURLに変換して表示する
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block'; // 写真を見せる
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
+
+</body>
+</html>
