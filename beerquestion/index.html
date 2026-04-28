@@ -90,13 +90,32 @@
 <script>
     const urlParams = new URLSearchParams(window.location.search);
     const shopName = urlParams.get('shop') || "不明な店舗";
+    // あなたのGASウェブアプリURL
     const GAS_URL = "https://script.google.com/macros/s/AKfycbz7V2zRpknWfArpQe-t4UXruqH0Z6CZO4W0whYIMHvUT6SBRpfP0-dMU4VbjBaQzYD2/exec";
     
     let winCount = 0;
-    let surveyData = {}; // ここにアンケートを一時的にためる
+    let surveyData = {}; // アンケートを一時保存する変数
 
-    // ステップ1: アンケートを「保存」して動画へ（ここでは送信しない）
+    // ミュートのON/OFFを切り替える関数
+    function toggleMute() {
+        const v = document.getElementById('myVideo');
+        const btn = document.getElementById('muteBtn');
+        
+        if (v.muted) {
+            v.muted = false;
+            v.volume = 1.0;
+            btn.innerText = "🔇 音を消す（ミュート）";
+            btn.style.background = "#ccc";
+        } else {
+            v.muted = true;
+            btn.innerText = "🔊 音を出す（ミュート解除）";
+            btn.style.background = "#4CAF50";
+        }
+    }
+
+    // ステップ1: アンケートを保存し、動画エリアへ切り替え
     function prepareAndStartVideo() {
+        // 入力内容の保存（ここではまだ送信しない）
         surveyData = {
             shop: shopName,
             score: document.getElementById('score').value,
@@ -108,18 +127,31 @@
             p5: document.getElementById('check5').checked
         };
 
+        // 画面表示の切り替え
         document.getElementById('step-survey').classList.add('hidden');
         document.getElementById('step-video').classList.remove('hidden');
         
         const v = document.getElementById('myVideo');
-        v.play();
+        
+        // ブラウザ制限を考慮し、最初はミュート状態で再生開始
+        v.muted = true;
+        v.play().catch(error => {
+            console.log("自動再生がブロックされました:", error);
+            document.getElementById('video-msg').innerText = "再生ボタンをタップしてください";
+        });
+
+        // 動画が終了した時の処理
         v.onended = () => {
             document.getElementById('video-msg').innerText = "お待たせしました！";
             document.getElementById('toGameBtn').classList.remove('hidden');
+            // 動画終了時に音量切り替えボタンを隠す（任意）
+            if(document.getElementById('muteBtn')) {
+                document.getElementById('muteBtn').classList.add('hidden');
+            }
         };
     }
 
-    // ステップ2: 最後にまとめて1回だけ送信する関数
+    // ステップ2: ゲーム終了時に「アンケート＋結果」をまとめて1回だけ送信
     async function sendFinalData(resultMessage) {
         const payload = {
             ...surveyData,
@@ -129,12 +161,12 @@
         try {
             await fetch(GAS_URL, {
                 method: "POST",
-                mode: "no-cors", // これを入れるとエラーが出にくくなります
+                mode: "no-cors", // CORSエラー回避のため
                 body: JSON.stringify(payload)
             });
-            console.log("一括送信成功");
+            console.log("全データの一括送信に成功しました");
         } catch (e) {
-            console.error("送信エラー:", e);
+            console.error("送信エラーが発生しました:", e);
         }
     }
 
@@ -150,25 +182,32 @@
         const comboDisp = document.getElementById('combo');
         const controls = document.getElementById('controls');
 
-        if ((userHand === 'グー' && cpHand === 'チョキ') || (userHand === 'チョキ' && cpHand === 'パー') || (userHand === 'パー' && cpHand === 'グー')) {
+        // 勝利判定
+        if ((userHand === 'グー' && cpHand === 'チョキ') || 
+            (userHand === 'チョキ' && cpHand === 'パー') || 
+            (userHand === 'パー' && cpHand === 'グー')) {
+            
             winCount++;
             comboDisp.innerText = winCount;
+
             if (winCount === 3) {
-                display.innerHTML = "<span style='color:red;'>3連勝！おめでとう！</span>";
+                display.innerHTML = "<span style='color:red;'>3連勝！おめでとうございます！</span>";
                 controls.classList.add('hidden');
                 document.getElementById('coupon').classList.remove('hidden');
-                // 送信
-                sendFinalData("★祝・3連勝★");
+                // 3連勝達成時に一括送信
+                sendFinalData("★祝・3連勝達成★");
             } else {
                 display.innerText = `勝ち！相手は${cpHand}。あと${3 - winCount}回！`;
                 display.style.color = "blue";
             }
-        } else {
+        } 
+        // 負け、または「あいこ」で終了
+        else {
             let reason = (userHand === cpHand) ? "あいこ" : "負け";
-            display.innerText = `${reason}（相手は${cpHand}）。また挑戦してね！`;
+            display.innerText = `${reason}（相手は${cpHand}）。また挑戦してくださいね！`;
             display.style.color = "red";
             controls.classList.add('hidden');
-            // 送信
+            // 終了時に結果をまとめて一括送信
             sendFinalData(`${winCount}勝して${reason}で終了`);
         }
     }
