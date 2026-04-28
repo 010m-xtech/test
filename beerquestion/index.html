@@ -83,16 +83,15 @@
 <script>
     const urlParams = new URLSearchParams(window.location.search);
     const shopName = urlParams.get('shop') || "不明な店舗";
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyTQEIQix9pEV3r5wbLh4b30NYR93hAcxbLkrrRZDTQN1K_4kQmxxRSB0jKUYlmbBBQ/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbz7V2zRpknWfArpQe-t4UXruqH0Z6CZO4W0whYIMHvUT6SBRpfP0-dMU4VbjBaQzYD2/exec";
+    
     let winCount = 0;
+    let surveyData = {}; // アンケート内容を一時保存する箱
 
-    // アンケート送信
-    async function submitToGas() {
-        const btn = document.getElementById('sendBtn');
-        btn.disabled = true;
-        btn.innerText = "送信中...";
-
-        const data = {
+    // 1. アンケート入力を一時保存して動画へ
+    function submitToGas() {
+        // データを変数に保存（まだ送信しない）
+        surveyData = {
             shop: shopName,
             score: document.getElementById('score').value,
             comment: document.getElementById('comment').value,
@@ -100,32 +99,38 @@
             p2: document.getElementById('check2').checked,
             p3: document.getElementById('check3').checked,
             p4: document.getElementById('check4').checked,
-            p5: document.getElementById('check5').checked,
-            gameResult: "アンケート完了"
+            p5: document.getElementById('check5').checked
+        };
+
+        // 画面切り替え
+        document.getElementById('step-survey').classList.add('hidden');
+        document.getElementById('step-video').classList.remove('hidden');
+        
+        const v = document.getElementById('myVideo');
+        v.play();
+        v.onended = () => {
+            document.getElementById('video-msg').innerText = "お待たせしました！";
+            document.getElementById('toGameBtn').classList.remove('hidden');
+        };
+    }
+
+    // 2. すべてをまとめて送信する関数
+    async function sendAllData(finalResult) {
+        // 保存しておいたアンケートデータに、じゃんけん結果を追加
+        const completeData = {
+            ...surveyData,
+            gameResult: finalResult
         };
 
         try {
-            await fetch(GAS_URL, { method: "POST", body: JSON.stringify(data) });
-            document.getElementById('step-survey').classList.add('hidden');
-            document.getElementById('step-video').classList.remove('hidden');
-            const v = document.getElementById('myVideo');
-            v.play();
-            v.onended = () => {
-                document.getElementById('video-msg').innerText = "お待たせしました！";
-                document.getElementById('toGameBtn').classList.remove('hidden');
-            };
+            await fetch(GAS_URL, {
+                method: "POST",
+                body: JSON.stringify(completeData)
+            });
+            console.log("全データ送信完了");
         } catch (e) {
-            alert("送信失敗。ネット環境を確認してください。");
-            btn.disabled = false;
+            console.error("送信失敗", e);
         }
-    }
-
-    // じゃんけん結果送信
-    async function sendFinalResult(resultText) {
-        const data = { shop: shopName, gameResult: resultText };
-        try {
-            await fetch(GAS_URL, { method: "POST", body: JSON.stringify(data) });
-        } catch (e) { console.log("結果送信失敗"); }
     }
 
     function showJanken() {
@@ -147,17 +152,19 @@
                 display.innerHTML = "<span style='color:red;'>3連勝！おめでとう！</span>";
                 controls.classList.add('hidden');
                 document.getElementById('coupon').classList.remove('hidden');
-                sendFinalResult("★祝・3連勝達成★");
+                // ★ここでまとめて送信！
+                sendAllData("★3連勝達成★");
             } else {
                 display.innerText = `勝ち！相手は${cpHand}。あと${3 - winCount}回！`;
                 display.style.color = "blue";
             }
         } else {
             let reason = (userHand === cpHand) ? "あいこ" : "負け";
-            display.innerText = `${reason}（相手は${cpHand}）。また挑戦してくださいね！`;
+            display.innerText = `${reason}（相手は${cpHand}）。また挑戦してね！`;
             display.style.color = "red";
-            controls.classList.add('hidden'); // 終了なのでボタンを隠す
-            sendFinalResult(`${winCount}回勝って${reason}終了`);
+            controls.classList.add('hidden');
+            // ★ここでもまとめて送信！
+            sendAllData(`${winCount}回勝って${reason}終了`);
         }
     }
 </script>
