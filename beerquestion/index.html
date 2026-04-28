@@ -19,87 +19,156 @@
     <div id="step-survey">
         <h2>🍺 生ビールアンケート</h2>
         <p>回答してゲームに挑戦！</p>
-        <select id="score" style="width: 100%; padding: 10px;">
-            <option value="5">5点（最高！）</option>
-            <option value="4">4点</option>
-            <option value="3">3点</option>
-        </select>
-        <button onclick="submitToGas()">回答を送信して次へ</button>
-    </div>
+    <span class="q-title">1. 当店の生ビールは何点ですか？</span>
+    <select id="score" style="width: 100%; padding: 10px; margin-top:10px;">
+        <option value="5">5点（最高！）</option>
+        <option value="4">4点</option>
+        <option value="3">3点</option>
+        <option value="2">2点</option>
+        <option value="1">1点</option>
+    </select>
+
+    <span class="q-title">2. こだわりを感じますか？（複数選択可）</span>
+    <label><input type="checkbox" id="check1" value="クリーミーな泡"> クリーミーな泡</label>
+    <label><input type="checkbox" id="check2" value="なめらかな口当たり"> なめらかな口当たり</label>
+    <label><input type="checkbox" id="check3" value="雑味のない味わい"> 雑味のない味わい</label>
+    <label><input type="checkbox" id="check4" value="液：泡＝7：3"> 液：泡＝7：3</label>
+    <label><input type="checkbox" id="check5" value="こだわりを感じる"> こだわりを感じる</label>
+
+    <span class="q-title">3. 飲んだ感想を教えてください</span>
+    <textarea id="comment" placeholder="例：キンキンに冷えてて美味しかった！"></textarea>
+
+    <button id="sendBtn" onclick="submitToGas()">回答してゲームに進む</button>
+</div>
+
 
     <div id="step-video" class="hidden">
-        <h2>こだわりを見てから挑戦！</h2>
+        <h2>こだわりを見てからゲームに挑戦！</h2>
         <video id="myVideo" src="https://010m-xtech.github.io/mymovie/NoLang_test20260422.mp4" playsinline></video>
         <p id="video-msg">動画を最後まで見てね...</p>
-        <button id="toGameBtn" class="hidden" onclick="showJanken()">いよいよじゃんけんへ！</button>
+        <button id="toGameBtn" class="hidden" onclick="showJanken()">いよいよゲーム！</button>
     </div>
 
-    <div id="step-janken" class="hidden">
-        <h2>運命の3連勝チャレンジ！</h2>
-        <p>現在：<span id="winCount">0</span>回勝利中</p>
-        <button class="janken-btn" onclick="play('グー')">✊</button>
-        <button class="janken-btn" onclick="play('チョキ')">✌️</button>
-        <button class="janken-btn" onclick="play('パー')">🖐️</button>
-        <p id="janken-result"></p>
+    <div class="container">
+    <h2>🍺 ビール争奪戦 🍺</h2>
+    <p>3回連続で勝てば1杯無料！</p>
+
+    <div class="status-box">
+        <div>現在の連勝数</div>
+        <div class="count" id="combo">0</div>
     </div>
+
+    <div class="message-area" id="display">
+        下のボタンを押して勝負開始！
+    </div>
+
+    <div class="btn-group" id="controls">
+        <button onclick="play('グー')">✊</button>
+        <button onclick="play('チョキ')">✌️</button>
+        <button onclick="play('パー')">✋</button>
+    </div>
+
+    <div id="coupon">
+        <h3 style="color: #ff5722; margin: 0;">🎊 おめでとう！ 🎊</h3>
+        <p style="font-size: 20px; font-weight: bold; margin: 10px 0;">生ビール1杯無料券</p>
+        <p style="font-size: 12px;">店員さんにこの画面を見せてね！</p>
+    </div>
+</div>
 </div>
 
 <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyeRoy4HWhor9OiAY-Mq0b7I0fJ7PyDmPyZ-gcC5eZad6PwYDjeyOy5tmYMwtwrvF4P/exec";
-    let winCount = 0;
-
     // 1. アンケート送信
-    async function submitToGas() {
-        const score = document.getElementById('score').value;
-        // 本来はfetchで送信しますが、確認用にすぐ切り替えます
-        console.log("送信スコア:", score);
-        
-        document.getElementById('step-survey').classList.add('hidden');
-        document.getElementById('step-video').classList.remove('hidden');
-        
-        // 動画を自動再生（ブラウザ制限でミュートが必要な場合あり）
-        const v = document.getElementById('myVideo');
-        v.play();
+ // URLから店舗名を取得 (?shop=A店 などの場合)
+    const urlParams = new URLSearchParams(window.location.search);
+    const shopName = urlParams.get('shop') || "不明な店舗";
 
-        // 動画が終了した時の処理
-        v.onended = function() {
-            document.getElementById('video-msg').innerText = "お待たせしました！";
-            document.getElementById('toGameBtn').classList.remove('hidden');
-        };
+    // ★ここに、ステップ1でコピーしたGASのURLを貼り付けてください★
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyeRoy4HWhor9OiAY-Mq0b7I0fJ7PyDmPyZ-gcC5eZad6PwYDjeyOy5tmYMwtwrvF4P/exec";
+
+    async function submitToGas() {
+        const btn = document.getElementById('sendBtn');
+        btn.disabled = true;
+        btn.innerText = "送信中...";
+
+        // データの収集
+        const score = document.getElementById('score').value;
+        const comment = document.getElementById('comment').value;
+        const selectedPoints = Array.from(document.querySelectorAll('input[name="point"]:checked'))
+                                    .map(el => el.value).join(', ');
+
+        const data = {
+        shop: shopName,
+        score: document.getElementById('score').value,
+        comment: document.getElementById('comment').value,
+        // 各チェックボックスの「チェックが入っているか(checked)」を直接送る
+        p1: document.getElementById('check1').checked,
+        p2: document.getElementById('check2').checked,
+        p3: document.getElementById('check3').checked,
+        p4: document.getElementById('check4').checked,
+        p5: document.getElementById('check5').checked
+    };
+
+        try {
+            // GASへデータを送信
+            await fetch(GAS_URL, {
+                method: "POST",
+                body: JSON.stringify(data)
+            });
+            
+            // 成功したら次のステップ（動画やゲーム）へ
+            alert("ご協力ありがとうございました！次は動画とゲームです！");
+            // ここで、アンケートエリアを隠して動画を表示する処理などを追加します
+            document.getElementById('survey-area').innerHTML = "<h2>送信完了！次は動画です...</h2>";
+            
+        } catch (e) {
+            alert("送信に失敗しました。もう一度お試しください。");
+            btn.disabled = false;
+        }
     }
+
 
     // 2. じゃんけん画面へ
-    function showJanken() {
-        document.getElementById('step-video').classList.add('hidden');
-        document.getElementById('step-janken').classList.remove('hidden');
-    }
+    let currentCombo = 0;
 
-    // 3. じゃんけんロジック（そのまま）
+// 3. じゃんけんロジック（あいこ即終了版）
     function play(userHand) {
         const hands = ['グー', 'チョキ', 'パー'];
         const cpHand = hands[Math.floor(Math.random() * 3)];
         const resDiv = document.getElementById('janken-result');
         
-        if (userHand === cpHand) {
-            resDiv.innerText = `あいこ！（相手も${cpHand}）`;
-        } else if (
+        // 勝利判定
+        if (
             (userHand === 'グー' && cpHand === 'チョキ') ||
             (userHand === 'チョキ' && cpHand === 'パー') ||
             (userHand === 'パー' && cpHand === 'グー')
         ) {
             winCount++;
             document.getElementById('winCount').innerText = winCount;
+            
             if (winCount === 3) {
-                resDiv.innerHTML = "<h1 style='color:red;'>3連勝！ビール無料券獲得！</h1>";
+                resDiv.innerHTML = "<h1 style='color:red;'>祝・3連勝！<br>生ビール無料券獲得！</h1>";
+                // ここでクーポン表示処理などを追加できます
             } else {
-                resDiv.innerText = `勝ち！次は${winCount + 1}回目です（相手は${cpHand}）`;
+                resDiv.innerText = `勝ち！ 第${winCount}関門突破！（相手は${cpHand}）`;
+                resDiv.style.color = "blue";
             }
-        } else {
+        } 
+        // あいこの場合
+        else if (userHand === cpHand) {
             winCount = 0;
             document.getElementById('winCount').innerText = winCount;
-            resDiv.innerText = `負け... 0回からやり直し（相手は${cpHand}）`;
+            resDiv.innerText = `あいこで終了...（相手も${cpHand}） 0回からやり直しです。`;
+            resDiv.style.color = "black";
+        } 
+        // 負けの場合
+        else {
+            winCount = 0;
+            document.getElementById('winCount').innerText = winCount;
+            resDiv.innerText = `負け...（相手は${cpHand}） 0回からやり直しです。`;
+            resDiv.style.color = "red";
         }
     }
+
 </script>
 
 </body>
