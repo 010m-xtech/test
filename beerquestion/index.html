@@ -13,7 +13,6 @@
         textarea { width: 95%; height: 60px; margin-top: 10px; border-radius: 5px; border: 1px solid #ccc; padding: 5px; }
         video { width: 100%; border-radius: 10px; margin-top: 15px; background: #000; }
         button { width: 100%; padding: 15px; margin-top: 20px; background: #ffc107; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 1.1em; }
-        button:disabled { background: #ccc; }
         .btn-group { display: flex; justify-content: space-around; margin-top: 20px; }
         .janken-btn { width: 30%; font-size: 2em; padding: 10px; background: #ff9800; }
         .status-box { background: #fef3c7; padding: 15px; border-radius: 10px; margin: 20px 0; }
@@ -35,7 +34,7 @@
             <option value="1">1点</option>
         </select>
 
-        <span class="q-title">2. こだわりを感じますか？（複数選択）</span>
+        <span class="q-title">2. こだわりを感じますか？（複数選択可）</span>
         <label><input type="checkbox" id="check1"> クリーミーな泡</label>
         <label><input type="checkbox" id="check2"> なめらかな口当たり</label>
         <label><input type="checkbox" id="check3"> 雑味のない味わい</label>
@@ -45,7 +44,7 @@
         <span class="q-title">3. 飲んだ感想を教えてください</span>
         <textarea id="comment" placeholder="感想をお聞かせください"></textarea>
 
-        <button id="sendBtn" onclick="submitToGas()">送信してゲームに進む</button>
+        <button id="sendBtn" onclick="prepareAndStartVideo()">アンケートを終えて動画を見る</button>
     </div>
 
     <div id="step-video" class="hidden">
@@ -86,11 +85,10 @@
     const GAS_URL = "https://script.google.com/macros/s/AKfycbz7V2zRpknWfArpQe-t4UXruqH0Z6CZO4W0whYIMHvUT6SBRpfP0-dMU4VbjBaQzYD2/exec";
     
     let winCount = 0;
-    let surveyData = {}; // アンケート内容を一時保存する箱
+    let surveyData = {}; // ここにアンケートを一時的にためる
 
-    // 1. アンケート入力を一時保存して動画へ
-    function submitToGas() {
-        // データを変数に保存（まだ送信しない）
+    // ステップ1: アンケートを「保存」して動画へ（ここでは送信しない）
+    function prepareAndStartVideo() {
         surveyData = {
             shop: shopName,
             score: document.getElementById('score').value,
@@ -102,7 +100,6 @@
             p5: document.getElementById('check5').checked
         };
 
-        // 画面切り替え
         document.getElementById('step-survey').classList.add('hidden');
         document.getElementById('step-video').classList.remove('hidden');
         
@@ -114,22 +111,22 @@
         };
     }
 
-    // 2. すべてをまとめて送信する関数
-    async function sendAllData(finalResult) {
-        // 保存しておいたアンケートデータに、じゃんけん結果を追加
-        const completeData = {
+    // ステップ2: 最後にまとめて1回だけ送信する関数
+    async function sendFinalData(resultMessage) {
+        const payload = {
             ...surveyData,
-            gameResult: finalResult
+            gameResult: resultMessage
         };
 
         try {
             await fetch(GAS_URL, {
                 method: "POST",
-                body: JSON.stringify(completeData)
+                mode: "no-cors", // これを入れるとエラーが出にくくなります
+                body: JSON.stringify(payload)
             });
-            console.log("全データ送信完了");
+            console.log("一括送信成功");
         } catch (e) {
-            console.error("送信失敗", e);
+            console.error("送信エラー:", e);
         }
     }
 
@@ -152,8 +149,8 @@
                 display.innerHTML = "<span style='color:red;'>3連勝！おめでとう！</span>";
                 controls.classList.add('hidden');
                 document.getElementById('coupon').classList.remove('hidden');
-                // ★ここでまとめて送信！
-                sendAllData("★3連勝達成★");
+                // 送信
+                sendFinalData("★祝・3連勝★");
             } else {
                 display.innerText = `勝ち！相手は${cpHand}。あと${3 - winCount}回！`;
                 display.style.color = "blue";
@@ -163,8 +160,8 @@
             display.innerText = `${reason}（相手は${cpHand}）。また挑戦してね！`;
             display.style.color = "red";
             controls.classList.add('hidden');
-            // ★ここでもまとめて送信！
-            sendAllData(`${winCount}回勝って${reason}終了`);
+            // 送信
+            sendFinalData(`${winCount}勝して${reason}で終了`);
         }
     }
 </script>
