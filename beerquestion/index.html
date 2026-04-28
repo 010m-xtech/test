@@ -48,11 +48,19 @@
     </div>
 
     <div id="step-video" class="hidden">
-        <h2>こだわりを見てから挑戦！</h2>
-        <video id="myVideo" src="https://010m-xtech.github.io/mymovie/NoLang_test20260422.mp4" playsinline muted></video>
-        <p id="video-msg">動画を最後まで見てね...</p>
-        <button id="toGameBtn" class="hidden" onclick="showJanken()">いよいよじゃんけんへ！</button>
+    <h2>こだわりを見てからゲームに挑戦！</h2>
+    
+    <video id="myVideo" src="https://010m-xtech.github.io/mymovie/NoLang_test20260422.mp4" playsinline muted autoplay></video>
+    
+    <div style="margin-top: 10px;">
+        <button id="muteBtn" onclick="toggleMute()" style="width: 80%; background: #4CAF50; font-size: 0.9em; padding: 10px;">
+            🔊 音を出す（ミュート解除）
+        </button>
     </div>
+
+    <p id="video-msg" style="margin-top: 10px;">動画を最後まで見てね...</p>
+    <button id="toGameBtn" class="hidden" onclick="showJanken()">いざ挑戦！</button>
+</div>
 
     <div id="step-janken" class="hidden">
         <h2>🍺 ビール争奪戦 🍺</h2>
