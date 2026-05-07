@@ -7,7 +7,7 @@
     <style>
         body { font-family: sans-serif; background: #fff8e1; text-align: center; padding: 20px; color: #333; }
         .container { background: white; padding: 20px; border-radius: 15px; max-width: 450px; margin: 0 auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .hidden { display: none; }
+        .hidden { display: none !important; }
         .q-title { font-weight: bold; margin-top: 20px; display: block; text-align: left; }
         label { display: block; text-align: left; margin: 8px 0; cursor: pointer; }
         textarea { width: 95%; height: 60px; margin-top: 10px; border-radius: 5px; border: 1px solid #ccc; padding: 5px; }
@@ -18,12 +18,30 @@
         .status-box { background: #fef3c7; padding: 15px; border-radius: 10px; margin: 20px 0; }
         .count { font-size: 2.5em; font-weight: bold; color: #d32f2f; }
         #coupon { margin-top: 20px; padding: 20px; border: 3px dashed #ff5722; border-radius: 10px; background: #fff5f2; }
+        
+        /* アニメーション */
+        #cp-hand-icon { display: inline-block; animation: down 0.2s ease-out; }
+        #user-hand-icon { display: inline-block; animation: up 0.2s ease-out; }
+        @keyframes down { 0% { transform: rotate(180deg) translateY(50px); opacity: 0; } 100% { transform: rotate(180deg) translateY(0); opacity: 1; } }
+        @keyframes up { 0% { transform: translateY(50px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="step-survey">
+    <div id="step-video">
+        <h2>こだわりを見てからゲームに挑戦！</h2>
+        <video id="myVideo" src="https://010m-xtech.github.io/mymovie/fukurou_test.mp4" playsinline muted autoplay></video>
+        <div style="margin-top: 10px;">
+            <button id="muteBtn" onclick="toggleMute()" style="width: 80%; background: #4CAF50; font-size: 0.9em; padding: 10px; color:white;">
+                🔊 音を出す（ミュート解除）
+            </button>
+        </div>
+        <p id="video-msg" style="margin-top: 10px;">動画を最後まで見てね...</p>
+        <button id="toSurveyBtn" class="hidden" onclick="showSurvey()">アンケートに答えてゲームに挑戦！</button>
+    </div>
+
+    <div id="step-survey" class="hidden">
         <h2>🍺 生ビールアンケート</h2>
         <span class="q-title">1. 当店の生ビールは何点ですか？</span>
         <select id="score" style="width: 100%; padding: 10px; margin-top:10px;">
@@ -33,52 +51,34 @@
             <option value="2">2点</option>
             <option value="1">1点</option>
         </select>
-
         <span class="q-title">2. こだわりを感じますか？（複数選択可）</span>
         <label><input type="checkbox" id="check1"> クリーミーな泡</label>
         <label><input type="checkbox" id="check2"> なめらかな口当たり</label>
         <label><input type="checkbox" id="check3"> 雑味のない味わい</label>
         <label><input type="checkbox" id="check4"> 液：泡＝7：3</label>
         <label><input type="checkbox" id="check5"> こだわりを感じる</label>
-
         <span class="q-title">3. 飲んだ感想を教えてください</span>
         <textarea id="comment" placeholder="感想をお聞かせください"></textarea>
-
-        <button id="sendBtn" onclick="prepareAndStartVideo()">アンケートを終えて動画を見る</button>
+        <button id="sendBtn" onclick="saveSurveyAndGoGame()">回答してゲームへ進む</button>
     </div>
-
-    <div id="step-video" class="hidden">
-    <h2>こだわりを見てからゲームに挑戦！</h2>
-    
-    <video id="myVideo" src="https://010m-xtech.github.io/mymovie/NoLang_test20260422.mp4" playsinline muted autoplay></video>
-    
-    <div style="margin-top: 10px;">
-        <button id="muteBtn" onclick="toggleMute()" style="width: 80%; background: #4CAF50; font-size: 0.9em; padding: 10px;">
-            🔊 音を出す（ミュート解除）
-        </button>
-    </div>
-
-    <p id="video-msg" style="margin-top: 10px;">動画を最後まで見てね...</p>
-    <button id="toGameBtn" class="hidden" onclick="showJanken()">いざ挑戦！</button>
-</div>
 
     <div id="step-janken" class="hidden">
         <h2>🍺 ビール争奪戦 🍺</h2>
         <p>3連勝で1杯無料！<br><small>※あいこ・負けは即終了</small></p>
-
         <div class="status-box">
             <div>現在の連勝数</div>
             <div class="count" id="combo">0</div>
         </div>
-
-        <div id="display" style="margin: 15px 0; font-weight: bold; min-height: 1.2em;">出す手を選んで！</div>
-
+        <div id="result-area" style="margin: 20px 0; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+            <div id="cp-hand-icon" style="font-size: 5em; transform: rotate(180deg); line-height: 1;"></div>
+            <div id="display" style="font-weight: bold; font-size: 1.2em; min-height: 1.5em; margin: 10px 0;">出す手を選んで！</div>
+            <div id="user-hand-icon" style="font-size: 5em; line-height: 1;"></div>
+        </div>
         <div class="btn-group" id="controls">
             <button class="janken-btn" onclick="play('グー')">✊</button>
             <button class="janken-btn" onclick="play('チョキ')">✌️</button>
             <button class="janken-btn" onclick="play('パー')">🖐️</button>
         </div>
-
         <div id="coupon" class="hidden">
             <h3 style="color: #ff5722; margin: 0;">🎊 おめでとう！ 🎊</h3>
             <p style="font-size: 20px; font-weight: bold; margin: 10px 0;">生ビール1杯無料券</p>
@@ -90,32 +90,53 @@
 <script>
     const urlParams = new URLSearchParams(window.location.search);
     const shopName = urlParams.get('shop') || "不明な店舗";
-    // あなたのGASウェブアプリURL
     const GAS_URL = "https://script.google.com/macros/s/AKfycbz7V2zRpknWfArpQe-t4UXruqH0Z6CZO4W0whYIMHvUT6SBRpfP0-dMU4VbjBaQzYD2/exec";
     
     let winCount = 0;
-    let surveyData = {}; // アンケートを一時保存する変数
+    let surveyData = {};
 
-    // ミュートのON/OFFを切り替える関数
+    // ステップ記録用関数
+    async function sendStepLog(stepName) {
+        try {
+            await fetch(GAS_URL, {
+                method: "POST",
+                mode: "no-cors",
+                body: JSON.stringify({ shop: shopName, step: stepName })
+            });
+        } catch (e) { console.error(e); }
+    }
+
+    // ① アクセス時にログ送信
+    window.onload = () => {
+        sendStepLog("①URLアクセス");
+        const v = document.getElementById('myVideo');
+        v.onended = () => {
+            document.getElementById('video-msg').innerText = "おいしい生ビールのために日々精進してまいります！";
+            document.getElementById('toSurveyBtn').classList.remove('hidden');
+            if(document.getElementById('muteBtn')) document.getElementById('muteBtn').classList.add('hidden');
+        };
+    };
+
     function toggleMute() {
         const v = document.getElementById('myVideo');
         const btn = document.getElementById('muteBtn');
-        
         if (v.muted) {
-            v.muted = false;
-            v.volume = 1.0;
-            btn.innerText = "🔇 音を消す（ミュート）";
-            btn.style.background = "#ccc";
+            v.muted = false; v.volume = 1.0;
+            btn.innerText = "🔇 音を消す"; btn.style.background = "#ccc";
         } else {
             v.muted = true;
-            btn.innerText = "🔊 音を出す（ミュート解除）";
-            btn.style.background = "#4CAF50";
+            btn.innerText = "🔊 音を出す"; btn.style.background = "#4CAF50";
         }
     }
 
-    // ステップ1: アンケートを保存し、動画エリアへ切り替え
-    function prepareAndStartVideo() {
-        // 入力内容の保存（ここではまだ送信しない）
+    function showSurvey() {
+        sendStepLog("②動画視聴完了"); // ② ログ送信
+        document.getElementById('step-video').classList.add('hidden');
+        document.getElementById('step-survey').classList.remove('hidden');
+    }
+
+    function saveSurveyAndGoGame() {
+        sendStepLog("③アンケート回答完了"); // ③ ログ送信
         surveyData = {
             shop: shopName,
             score: document.getElementById('score').value,
@@ -126,63 +147,38 @@
             p4: document.getElementById('check4').checked,
             p5: document.getElementById('check5').checked
         };
-
-        // 画面表示の切り替え
         document.getElementById('step-survey').classList.add('hidden');
-        document.getElementById('step-video').classList.remove('hidden');
-        
-        const v = document.getElementById('myVideo');
-        
-        // ブラウザ制限を考慮し、最初はミュート状態で再生開始
-        v.muted = true;
-        v.play().catch(error => {
-            console.log("自動再生がブロックされました:", error);
-            document.getElementById('video-msg').innerText = "再生ボタンをタップしてください";
-        });
-
-        // 動画が終了した時の処理
-        v.onended = () => {
-            document.getElementById('video-msg').innerText = "お待たせしました！";
-            document.getElementById('toGameBtn').classList.remove('hidden');
-            // 動画終了時に音量切り替えボタンを隠す（任意）
-            if(document.getElementById('muteBtn')) {
-                document.getElementById('muteBtn').classList.add('hidden');
-            }
-        };
-    }
-
-    // ステップ2: ゲーム終了時に「アンケート＋結果」をまとめて1回だけ送信
-    async function sendFinalData(resultMessage) {
-        const payload = {
-            ...surveyData,
-            gameResult: resultMessage
-        };
-
-        try {
-            await fetch(GAS_URL, {
-                method: "POST",
-                mode: "no-cors", // CORSエラー回避のため
-                body: JSON.stringify(payload)
-            });
-            console.log("全データの一括送信に成功しました");
-        } catch (e) {
-            console.error("送信エラーが発生しました:", e);
-        }
-    }
-
-    function showJanken() {
-        document.getElementById('step-video').classList.add('hidden');
         document.getElementById('step-janken').classList.remove('hidden');
     }
 
-    function play(userHand) {
+    async function sendFinalData(resultMessage) {
+        const payload = { ...surveyData, gameResult: resultMessage };
+        try {
+            await fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
+        } catch (e) { console.error(e); }
+    }
+
+function play(userHand) {
+        if (winCount >= 3) return;
+
         const hands = ['グー', 'チョキ', 'パー'];
+        const icons = { 'グー': '✊', 'チョキ': '✌️', 'パー': '🖐️' };
+        
         const cpHand = hands[Math.floor(Math.random() * 3)];
+        
         const display = document.getElementById('display');
         const comboDisp = document.getElementById('combo');
         const controls = document.getElementById('controls');
+        
+        // アイコンを表示する場所を取得
+        const cpHandIcon = document.getElementById('cp-hand-icon');
+        const userHandIcon = document.getElementById('user-hand-icon');
 
-        // 勝利判定
+        // ★相手の手と自分の手の両方を表示
+        cpHandIcon.innerText = icons[cpHand];
+        userHandIcon.innerText = icons[userHand];
+
+        // 1. 勝利判定
         if ((userHand === 'グー' && cpHand === 'チョキ') || 
             (userHand === 'チョキ' && cpHand === 'パー') || 
             (userHand === 'パー' && cpHand === 'グー')) {
@@ -194,23 +190,22 @@
                 display.innerHTML = "<span style='color:red;'>3連勝！おめでとうございます！</span>";
                 controls.classList.add('hidden');
                 document.getElementById('coupon').classList.remove('hidden');
-                // 3連勝達成時に一括送信
                 sendFinalData("★祝・3連勝達成★");
             } else {
-                display.innerText = `勝ち！相手は${cpHand}。あと${3 - winCount}回！`;
+                display.innerText = `勝ち！ あと${3 - winCount}回！`;
                 display.style.color = "blue";
             }
         } 
-        // 負け、または「あいこ」で終了
+        // 2. 負け、または「あいこ」の場合
         else {
             let reason = (userHand === cpHand) ? "あいこ" : "負け";
-            display.innerText = `${reason}（相手は${cpHand}）。また挑戦してくださいね！`;
+            display.innerText = `${reason}。また挑戦してくださいね！`;
             display.style.color = "red";
             controls.classList.add('hidden');
-            // 終了時に結果をまとめて一括送信
             sendFinalData(`${winCount}勝して${reason}で終了`);
         }
     }
+
 </script>
 </body>
 </html>
