@@ -16,7 +16,7 @@
         
         /* おみくじエリアの設定 */
         #result-area {
-            min-height: 340px; /* 紙の高さに合わせて確保 */
+            min-height: 340px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -48,8 +48,6 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
             border-radius: 5px;
         }
-
-        #coupon { margin-top: 20px; padding: 20px; border: 3px dashed #ff5722; border-radius: 10px; background: #fff5f2; }
     </style>
 </head>
 <body>
@@ -57,7 +55,7 @@
 <div class="container">
     <div id="step-video">
         <h2>こだわりを見てから挑戦！</h2>
-        <video id="myVideo" src="https://010m-xtech.github.io/mymovie/fukurou_movie0511.mp4" playsinline muted autoplay></video>
+        <video id="myVideo" src="https://010m-xtech.github.io/mymovie/NoLang_test20260422.mp4" playsinline muted autoplay></video>
         <div style="margin-top: 10px;">
             <button id="muteBtn" onclick="toggleMute()" style="width: 80%; background: #4CAF50; font-size: 0.9em; padding: 10px; color:white;">
                 🔊 音を出す（ミュート解除）
@@ -95,16 +93,11 @@
                 <img id="box-img" src="omikuji_box.png" style="width:65px; height:139px;">
             </div>
             <div id="display" style="font-weight: bold; font-size: 1.2em; margin-top: 20px;">
-                今宵のあなたの運勢は・・
+                今日の運勢はどうかな？
             </div>
         </div>
         <div id="controls">
             <button onclick="startOmikuji()" style="background: #ff9800;">おみくじを引く！</button>
-        </div>
-        <div id="coupon" class="hidden">
-            <h3 style="color: #ff5722; margin: 0;">🎊 おめでとう！ 🎊</h3>
-            <p style="font-size: 20px; font-weight: bold; margin: 10px 0;">生ビール1杯無料券</p>
-            <p style="font-size: 12px;">店員さんにこの画面を見せてね！</p>
         </div>
     </div>
 </div>
@@ -112,11 +105,10 @@
 <script>
     const urlParams = new URLSearchParams(window.location.search);
     const shopName = urlParams.get('shop') || "不明な店舗";
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbz7V2zRpknWfArpQe-t4UXruqH0Z6CZO4W0whYIMHvUT6SBRpfP0-dMU4VbjBaQzYD2/exec"; // ★ここに自分のURLを貼る
+    const GAS_URL = "あなたのGASウェブアプリURL"; // ★ここに自分のURLを貼る
 
     let surveyData = {};
 
-    // ログ送信関数
     async function sendStepLog(stepName) {
         try {
             await fetch(GAS_URL, {
@@ -127,12 +119,11 @@
         } catch (e) { console.error(e); }
     }
 
-    // ① アクセス時にログ送信
     window.onload = () => {
         sendStepLog("①URLアクセス");
         const v = document.getElementById('myVideo');
         v.onended = () => {
-            document.getElementById('video-msg').innerText = "おいしい生ビールのために日々精進してまいります！";
+            document.getElementById('video-msg').innerText = "アンケートにご協力お願いします";
             document.getElementById('toSurveyBtn').classList.remove('hidden');
             if(document.getElementById('muteBtn')) document.getElementById('muteBtn').classList.add('hidden');
         };
@@ -172,41 +163,34 @@
         document.getElementById('step-janken').classList.remove('hidden');
     }
 
-    // おみくじ開始（画像版）
     function startOmikuji() {
         const boxWrapper = document.getElementById('omikuji-box-wrapper');
         const boxImg = document.getElementById('box-img');
         const display = document.getElementById('display');
         const controls = document.getElementById('controls');
 
-        // ボタンを隠し、箱を揺らす
         controls.classList.add('hidden');
         display.innerText = "シャカシャカ... 何が出るかな？";
         boxImg.classList.add('shaking');
 
         setTimeout(() => {
-            // 抽選結果の設定（画像名と一致させる）
             const results = [
-                { grade: "大吉", img: "1daikichi.png", isWin: true },
-                { grade: "中吉", img: "2chukichi.png", isWin: false },
-                { grade: "小吉", img: "3shokichi.png", isWin: false },
-                { grade: "吉",   img: "4kichi.png",    isWin: false },
-                { grade: "末吉", img: "5suekichi.png", isWin: false }
+                { grade: "大吉", img: "1daikichi.png" },
+                { grade: "中吉", img: "2chukichi.png" },
+                { grade: "小吉", img: "3shokichi.png" },
+                { grade: "吉",   img: "4kichi.png" },
+                { grade: "末吉", img: "5suekichi.png" }
             ];
 
             const result = results[Math.floor(Math.random() * results.length)];
 
-            // 箱を消して結果の紙を表示
+            // クーポン表示処理を削除
             boxWrapper.innerHTML = `<img src="${result.img}" class="result-paper">`;
-            display.innerText = ""; // メッセージは画像内にあるので消す
+            display.innerText = ""; 
 
-            if (result.isWin) {
-                document.getElementById('coupon').classList.remove('hidden');
-            }
-
-            // スプレッドシートへ最終送信
+            // 最終送信（完走ログ）
             sendFinalData(`おみくじ結果：${result.grade}`);
-        }, 1200); // 1.2秒揺らす
+        }, 1200);
     }
 
     async function sendFinalData(resultMessage) {
