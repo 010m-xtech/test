@@ -10,44 +10,17 @@
         .hidden { display: none !important; }
         .q-title { font-weight: bold; margin-top: 20px; display: block; text-align: left; }
         label { display: block; text-align: left; margin: 8px 0; cursor: pointer; }
-        textarea { width: 95%; height: 60px; margin-top: 10px; border-radius: 5px; border: 1px solid #ccc; padding: 5px; }
+        textarea, select, input[type="number"] { width: 100%; box-sizing: border-box; padding: 10px; margin-top: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 1em; }
+        textarea { height: 60px; }
         video { width: 100%; border-radius: 10px; margin-top: 15px; background: #000; }
         button { width: 100%; padding: 15px; margin-top: 20px; background: #ffc107; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 1.1em; }
         
-        /* おみくじエリアの設定 */
-        #result-area {
-            min-height: 340px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            margin: 20px 0;
-        }
+        /* ゲームリンクボタンのスタイル */
+        .game-link-btn { display: block; width: 100%; box-sizing: border-box; text-decoration: none; padding: 15px; margin-top: 15px; background: #ff9800; color: white; border-radius: 30px; font-weight: bold; font-size: 1.1em; text-align: center; transition: background 0.2s; border: none; cursor: pointer; font-family: sans-serif; }
+        .game-link-btn:hover { background: #e65100; }
 
-        /* 箱がカタカタ揺れるアニメーション */
-        @keyframes katakata {
-            0% { transform: rotate(0deg); }
-            25% { transform: rotate(10deg); }
-            50% { transform: rotate(-10deg); }
-            75% { transform: rotate(10deg); }
-            100% { transform: rotate(0deg); }
-        }
-        .shaking {
-            animation: katakata 0.1s infinite;
-        }
-
-        /* 紙がパッと出るアニメーション */
-        @keyframes pop-up {
-            0% { transform: scale(0.5); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        .result-paper {
-            width: 210px;
-            height: 319px;
-            animation: pop-up 0.4s ease-out forwards;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            border-radius: 5px;
-        }
+        /* 追加した案内テキスト用のスタイル */
+        .survey-guide-text { margin-top: 30px; margin-bottom: 5px; font-size: 1em; color: #333; }
     </style>
 </head>
 <body>
@@ -55,7 +28,7 @@
 <div class="container">
     <div id="step-video">
         <h2>こだわりを見てから挑戦！</h2>
-        <video id="myVideo" src="https://010m-xtech.github.io/mymovie/fukurou_movie0511.mp4" playsinline muted autoplay></video>
+        <video id="myVideo" src="https://010m-xtech.github.io/mymovie/073810_20260515.mp4" playsinline muted autoplay></video>
         <div style="margin-top: 10px;">
             <button id="muteBtn" onclick="toggleMute()" style="width: 80%; background: #4CAF50; font-size: 0.9em; padding: 10px; color:white;">
                 🔊 音を出す（ミュート解除）
@@ -67,37 +40,43 @@
 
     <div id="step-survey" class="hidden">
         <h2>🍺 生ビールアンケート</h2>
+
+        <span class="q-title">A. あなたの性別を教えてください</span>
+        <select id="gender">
+            <option value="男性">男性</option>
+            <option value="女性">女性</option>
+        </select>
+
+        <span class="q-title">B. 本日のご来店人数を教えてください</span>
+        <select id="guests">
+            <option value="1人">1人</option>
+            <option value="2人">2人</option>
+            <option value="3人以上">3人以上</option>
+        </select>
+
         <span class="q-title">1. 当店の生ビールは何点ですか？</span>
-        <select id="score" style="width: 100%; padding: 10px; margin-top:10px;">
+        <select id="score">
             <option value="5">5点（最高！）</option>
             <option value="4">4点</option>
             <option value="3">3点</option>
             <option value="2">2点</option>
             <option value="1">1点</option>
         </select>
+
         <span class="q-title">2. こだわりを感じますか？（複数選択可）</span>
         <label><input type="checkbox" id="check1"> クリーミーな泡</label>
         <label><input type="checkbox" id="check2"> なめらかな口当たり</label>
         <label><input type="checkbox" id="check3"> 雑味のない味わい</label>
         <label><input type="checkbox" id="check4"> 液：泡＝7：3</label>
         <label><input type="checkbox" id="check5"> こだわりを感じる</label>
+
         <span class="q-title">3. 飲んだ感想を教えてください</span>
         <textarea id="comment" placeholder="感想をお聞かせください"></textarea>
-        <button id="sendBtn" onclick="saveSurveyAndGoGame()">回答して運試しへ！</button>
-    </div>
-
-    <div id="step-janken" class="hidden">
-        <h2>🍺 運試しおみくじ 🍺</h2>
-        <div id="result-area">
-            <div id="omikuji-box-wrapper">
-                <img id="box-img" src="omikuji_box.png" style="width:65px; height:139px;">
-            </div>
-            <div id="display" style="font-weight: bold; font-size: 1.2em; margin-top: 20px;">
-                今宵のあなたの運勢は・・
-            </div>
-        </div>
-        <div id="controls">
-            <button onclick="startOmikuji()" style="background: #ff9800;">おみくじを引く！</button>
+        
+        <p class="survey-guide-text">アンケートに回答したらゲームに挑戦</p>
+        <div>
+            <button class="game-link-btn" onclick="submitAndRedirect('今宵の運試し', 'https://www.dreamcore.gg/game/g_GOsEcGD2Nc?utm_source=dreamcore&utm_medium=share&share_id=share_aedb6881-4a30-4a36-8e03-14cd6d824b57&ref=u_V3gZaWK5Nj')">今宵の運試し</button>
+            <button class="game-link-btn" style="background: #e65100;" onclick="submitAndRedirect('相性占い', 'https://www.dreamcore.gg/game/g_MuYeRKta2C?utm_source=dreamcore&utm_medium=share&share_id=share_861bb043-2ce1-417a-88f1-3f3aff138cb4&ref=u_V3gZaWK5Nj')">相性占い</button>
         </div>
     </div>
 </div>
@@ -105,10 +84,9 @@
 <script>
     const urlParams = new URLSearchParams(window.location.search);
     const shopName = urlParams.get('shop') || "不明な店舗";
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbz7V2zRpknWfArpQe-t4UXruqH0Z6CZO4W0whYIMHvUT6SBRpfP0-dMU4VbjBaQzYD2/exec"; // ★ここに自分のURLを貼る
+    const GAS_URL = "あなたのGASウェブアプリURL"; // ★ここに自分のURLを貼る
 
-    let surveyData = {};
-
+    // ログ送信関数
     async function sendStepLog(stepName) {
         try {
             await fetch(GAS_URL, {
@@ -119,6 +97,7 @@
         } catch (e) { console.error(e); }
     }
 
+    // ① アクセス時にログ送信
     window.onload = () => {
         sendStepLog("①URLアクセス");
         const v = document.getElementById('myVideo');
@@ -142,62 +121,43 @@
     }
 
     function showSurvey() {
-        sendStepLog("②動画視聴完了");
+        sendStepLog("②動画視聴完了"); // ② ログ
         document.getElementById('step-video').classList.add('hidden');
         document.getElementById('step-survey').classList.remove('hidden');
     }
 
-    function saveSurveyAndGoGame() {
-        sendStepLog("③アンケート回答完了");
-        surveyData = {
+    // ボタンが押されたらデータを送ってから遷移する関数
+    async function submitAndRedirect(gameName, targetUrl) {
+        sendStepLog(`③アンケート回答完了(${gameName})`); // ③ ログ
+        
+        // 追加された項目も含めてデータを集計
+        const surveyData = {
             shop: shopName,
+            gender: document.getElementById('gender').value,   // 追加：性別
+            guests: document.getElementById('guests').value,   // 追加：来店人数
             score: document.getElementById('score').value,
             comment: document.getElementById('comment').value,
             p1: document.getElementById('check1').checked,
             p2: document.getElementById('check2').checked,
             p3: document.getElementById('check3').checked,
             p4: document.getElementById('check4').checked,
-            p5: document.getElementById('check5').checked
+            p5: document.getElementById('check5').checked,
+            gameResult: `遷移先：${gameName}`
         };
-        document.getElementById('step-survey').classList.add('hidden');
-        document.getElementById('step-janken').classList.remove('hidden');
-    }
-
-    function startOmikuji() {
-        const boxWrapper = document.getElementById('omikuji-box-wrapper');
-        const boxImg = document.getElementById('box-img');
-        const display = document.getElementById('display');
-        const controls = document.getElementById('controls');
-
-        controls.classList.add('hidden');
-        display.innerText = "シャカシャカ... 何が出るかな？";
-        boxImg.classList.add('shaking');
-
-        setTimeout(() => {
-            const results = [
-                { grade: "大吉", img: "1daikichi.png" },
-                { grade: "中吉", img: "2chukichi.png" },
-                { grade: "小吉", img: "3shokichi.png" },
-                { grade: "吉",   img: "4kichi.png" },
-                { grade: "末吉", img: "5suekichi.png" }
-            ];
-
-            const result = results[Math.floor(Math.random() * results.length)];
-
-            // クーポン表示処理を削除
-            boxWrapper.innerHTML = `<img src="${result.img}" class="result-paper">`;
-            display.innerText = ""; 
-
-            // 最終送信（完走ログ）
-            sendFinalData(`おみくじ結果：${result.grade}`);
-        }, 1200);
-    }
-
-    async function sendFinalData(resultMessage) {
-        const payload = { ...surveyData, gameResult: resultMessage };
+        
         try {
-            await fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
-        } catch (e) { console.error(e); }
+            // GASへデータを送信
+            await fetch(GAS_URL, { 
+                method: "POST", 
+                mode: "no-cors", 
+                body: JSON.stringify(surveyData) 
+            });
+        } catch (e) { 
+            console.error(e); 
+        } finally {
+            // 外部URLへジャンプ
+            window.location.href = targetUrl;
+        }
     }
 </script>
 </body>
