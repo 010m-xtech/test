@@ -21,6 +21,9 @@
 
         /* 追加した案内テキスト用のスタイル */
         .survey-guide-text { margin-top: 30px; margin-bottom: 5px; font-size: 1em; color: #333; }
+
+        /* ★安心注記用のスタイル（追加） */
+        .notice-text { font-size: 10px; color: #777; text-align: left; margin-top: 30px; line-height: 1.4; border-top: 1px dashed #ddd; padding-top: 10px; }
     </style>
 </head>
 <body>
@@ -78,6 +81,10 @@
             <button class="game-link-btn" onclick="submitAndRedirect('今宵の運試し', 'https://www.dreamcore.gg/game/g_GOsEcGD2Nc?utm_source=dreamcore&utm_medium=share&share_id=share_aedb6881-4a30-4a36-8e03-14cd6d824b57&ref=u_V3gZaWK5Nj')">今宵の運試し</button>
             <button class="game-link-btn" style="background: #e65100;" onclick="submitAndRedirect('相性占い', 'https://www.dreamcore.gg/game/g_MuYeRKta2C?utm_source=dreamcore&utm_medium=share&share_id=share_861bb043-2ce1-417a-88f1-3f3aff138cb4&ref=u_V3gZaWK5Nj')">相性占い</button>
         </div>
+
+        <div class="notice-text">
+            ※当システムではローカルストレージを使用しこのアプリ専用の識別番号を発行しています。個人を特定する情報は一切取得いたしません。
+        </div>
     </div>
 </div>
 
@@ -85,6 +92,8 @@
     const urlParams = new URLSearchParams(window.location.search);
     const shopName = urlParams.get('shop') || "不明な店舗";
     const GAS_URL = "https://script.google.com/macros/s/AKfycbz7V2zRpknWfArpQe-t4UXruqH0Z6CZO4W0whYIMHvUT6SBRpfP0-dMU4VbjBaQzYD2/exec"; // ★ここに自分のURLを貼る
+
+    let deviceId = ""; // ★識別IDを記憶する変数（追加）
 
     // ログ送信関数
     async function sendStepLog(stepName) {
@@ -97,8 +106,17 @@
         } catch (e) { console.error(e); }
     }
 
-    // ① アクセス時にログ送信
+    // ① アクセス時にログ送信 ＆ 識別IDの発行・読み込み
     window.onload = () => {
+        // ★【識別IDの処理】（追加）
+        let savedId = localStorage.getItem('beer_app_device_id');
+        if (!savedId) {
+            // 初めてのスマホなら、その場で一意の背番号（日付＋ランダム文字列）を作る
+            savedId = 'dev_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
+            localStorage.setItem('beer_app_device_id', savedId);
+        }
+        deviceId = savedId; // 変数にセット
+
         sendStepLog("①URLアクセス");
         const v = document.getElementById('myVideo');
         v.onended = () => {
@@ -142,7 +160,8 @@
             p3: document.getElementById('check3').checked,
             p4: document.getElementById('check4').checked,
             p5: document.getElementById('check5').checked,
-            gameResult: `遷移先：${gameName}`
+            gameResult: `遷移先：${gameName}`,
+            deviceId: deviceId // ★データの中に識別IDを合流させる（追加）
         };
         
         try {
