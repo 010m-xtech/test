@@ -22,7 +22,7 @@
         /* 追加した案内テキスト用のスタイル */
         .survey-guide-text { margin-top: 30px; margin-bottom: 5px; font-size: 1em; color: #333; }
 
-        /* ★安心注記用のスタイル（追加） */
+        /* 安心注記用のスタイル */
         .notice-text { font-size: 10px; color: #777; text-align: left; margin-top: 30px; line-height: 1.4; border-top: 1px dashed #ddd; padding-top: 10px; }
     </style>
 </head>
@@ -91,33 +91,34 @@
 <script>
     const urlParams = new URLSearchParams(window.location.search);
     const shopName = urlParams.get('shop') || "不明な店舗";
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbz7V2zRpknWfArpQe-t4UXruqH0Z6CZO4W0whYIMHvUT6SBRpfP0-dMU4VbjBaQzYD2/exec"; // ★ここに自分のURLを貼る
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbz7V2zRpknWfArpQe-t4UXruqH0Z6CZO4W0whYIMHvUT6SBRpfP0-dMU4VbjBaQzYD2/exec"; // ★URLを変更した場合はここに新しいものを貼る
 
-    let deviceId = ""; // ★識別IDを記憶する変数（追加）
+    let deviceId = ""; // 識別IDを保持する変数
 
-    // ログ送信関数
+    // ログ送信関数（★deviceIdも一緒にGASへ送るよう修正）
     async function sendStepLog(stepName) {
         try {
             await fetch(GAS_URL, {
                 method: "POST",
                 mode: "no-cors",
-                body: JSON.stringify({ shop: shopName, step: stepName })
+                body: JSON.stringify({ shop: shopName, step: stepName, deviceId: deviceId })
             });
         } catch (e) { console.error(e); }
     }
 
-    // ① アクセス時にログ送信 ＆ 識別IDの発行・読み込み
+    // ① アクセス時：識別IDを確定させてからログを飛ばすよう修正
     window.onload = () => {
-        // ★【識別IDの処理】（追加）
+        // 先に記憶エリアから識別IDを読み込む（無ければその場で作る）
         let savedId = localStorage.getItem('beer_app_device_id');
         if (!savedId) {
-            // 初めてのスマホなら、その場で一意の背番号（日付＋ランダム文字列）を作る
             savedId = 'dev_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
             localStorage.setItem('beer_app_device_id', savedId);
         }
-        deviceId = savedId; // 変数にセット
+        deviceId = savedId; // 確定したIDをセット
 
+        // IDが確定した直後にアクセスログを送信
         sendStepLog("①URLアクセス");
+
         const v = document.getElementById('myVideo');
         v.onended = () => {
             document.getElementById('video-msg').innerText = "日々精進してまいります";
@@ -139,20 +140,19 @@
     }
 
     function showSurvey() {
-        sendStepLog("②動画視聴完了"); // ② ログ
+        sendStepLog("②動画視聴完了"); 
         document.getElementById('step-video').classList.add('hidden');
         document.getElementById('step-survey').classList.remove('hidden');
     }
 
     // ボタンが押されたらデータを送ってから遷移する関数
     async function submitAndRedirect(gameName, targetUrl) {
-        sendStepLog(`③アンケート回答完了(${gameName})`); // ③ ログ
+        sendStepLog(`③アンケート回答完了(${gameName})`); 
         
-        // 追加された項目も含めてデータを集計
         const surveyData = {
             shop: shopName,
-            gender: document.getElementById('gender').value,   // 追加：性別
-            guests: document.getElementById('guests').value,   // 追加：来店人数
+            gender: document.getElementById('gender').value,   
+            guests: document.getElementById('guests').value,   
             score: document.getElementById('score').value,
             comment: document.getElementById('comment').value,
             p1: document.getElementById('check1').checked,
@@ -161,11 +161,10 @@
             p4: document.getElementById('check4').checked,
             p5: document.getElementById('check5').checked,
             gameResult: `遷移先：${gameName}`,
-            deviceId: deviceId // ★データの中に識別IDを合流させる（追加）
+            deviceId: deviceId // メイン回答用にもIDを合流させる
         };
         
         try {
-            // GASへデータを送信
             await fetch(GAS_URL, { 
                 method: "POST", 
                 mode: "no-cors", 
@@ -174,7 +173,6 @@
         } catch (e) { 
             console.error(e); 
         } finally {
-            // 外部URLへジャンプ
             window.location.href = targetUrl;
         }
     }
