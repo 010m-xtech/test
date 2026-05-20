@@ -210,8 +210,8 @@ faceMesh.onResults((results) => {
             const charWidth = faceSize * 0.85;  
             const charHeight = faceSize * 1.4; 
             
-            const charX = x - charWidth * 1.6; 
-            const charY = y + charHeight * 0.05;
+            const charX = x - charWidth * 1.9; 
+            const charY = y + charHeight * -0.05;
 
             // ⚠️ 画像が壊れていたり無くても、エラーで全体を止めない安全装置
             if (charImg.complete && charImg.naturalWidth > 0) {
