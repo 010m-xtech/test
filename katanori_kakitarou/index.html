@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>お店専用・肩乗りかき太郎カメラ</title>
+    <title>ビーチのバーチャル背景・肩乗りかき太郎カメラ</title>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -17,27 +18,20 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            overflow: hidden;
+            background-color: #000;
         }
 
-        video {
+        /* 📸 メインの描画画面（ここに海、切り抜かれた人、かき太郎をすべて合成して映します） */
+        canvas#output_canvas {
             position: absolute;
             width: 100%;
             height: 100%;
             object-fit: cover;
-        }
-        video.mirror {
-            transform: scaleX(-1);
-        }
-
-        canvas {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            pointer-events: none;
             z-index: 10;
         }
 
+        /* 🔄 カメラ切り替えボタン（画面右上） */
         #switch-btn {
             position: absolute;
             top: 25px;
@@ -61,6 +55,7 @@
             fill: white;
         }
 
+        /* シャッターボタン */
         #shutter-btn {
             position: absolute;
             bottom: 40px;
@@ -91,6 +86,7 @@
             letter-spacing: 0.5px;
         }
 
+        /* 📸 撮影後の確認画面 */
         #result-container {
             display: none;
             position: absolute;
@@ -135,18 +131,18 @@
 </head>
 <body>
 
+<video id="webcam" style="display:none;" autoplay playsinline></video>
+<canvas id="mask_canvas" style="display:none;"></canvas>
+
 <div id="app-container">
-    <video id="webcam" class="mirror" autoplay playsinline></video>
-    <canvas id="output_canvas"></canvas>
-    
-    <button id="switch-btn" aria-label="カメラを切り替える">
+    <canvas id="output_canvas"></canvas> <button id="switch-btn" aria-label="カメラを切り替える">
         <svg viewBox="0 0 24 24">
             <path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/>
         </svg>
     </button>
 
     <button id="shutter-btn" aria-label="写真を撮る"></button>
-    <div id="loading">🦪 かき太郎を呼んでいます...</div>
+    <div id="loading">🦪 ビーチのカメラを準備中...</div>
 </div>
 
 <div id="result-container">
@@ -157,8 +153,11 @@
 
 <script>
 const video = document.getElementById('webcam');
-const canvas = document.getElementById('output_canvas');
-const ctx = canvas.getContext('2d');
+const maskCanvas = document.getElementById('mask_canvas');
+const maskCtx = maskCanvas.getContext('2d');
+const outputCanvas = document.getElementById('output_canvas');
+const ctx = outputCanvas.getContext('2d');
+
 const loading = document.getElementById('loading');
 const shutterBtn = document.getElementById('shutter-btn');
 const switchBtn = document.getElementById('switch-btn');
@@ -166,54 +165,98 @@ const resultContainer = document.getElementById('result-container');
 const resultImage = document.getElementById('result-image');
 const closeBtn = document.getElementById('close-btn');
 
+// --- 🦪 画像の読み込み ---
 const charImg = new Image();
 charImg.src = 'kakitaro.png'; 
 
+const beachBgImg = new Image();
+beachBgImg.src = 'beach_bg.jpg'; // ★先ほどの浜辺の画像ファイル名
+
 let currentFacingMode = 'user'; 
 let activeCamera = null;
+let latestFaceResults = null;
 
 function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    outputCanvas.width = window.innerWidth;
+    outputCanvas.height = window.innerHeight;
+    maskCanvas.width = window.innerWidth;
+    maskCanvas.height = window.innerHeight;
 }
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
+// 🚀 1. 顔認識AIの設定
 const faceMesh = new FaceMesh({
     locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
 });
-
 faceMesh.setOptions({
     maxNumFaces: 4, 
     refineLandmarks: true,
     minDetectionConfidence: 0.5,
     minTrackingConfidence: 0.5
 });
-
 faceMesh.onResults((results) => {
-    // 📸 カメラさえ動けば、画像がなくても「呼んでいます」の文字を消すように修正
+    latestFaceResults = results; // 顔の位置データを記憶
+});
+
+// 🚀 2. 人物切り抜きAIの設定
+const selfieSegmentation = new SelfieSegmentation({
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${file}`
+});
+selfieSegmentation.setOptions({ modelSelection: 1 }); // 高精度モデル
+
+// 🌊 切り抜きと浜辺背景合成のメイン処理
+selfieSegmentation.onResults((results) => {
     loading.style.display = 'none';
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-        for (let i = 0; i < results.multiFaceLandmarks.length; i++) {
-            const landmarks = results.multiFaceLandmarks[i];
+    // ① まず画面全体に浜辺の背景を描画
+    ctx.save();
+    ctx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
+    if (beachBgImg.complete && beachBgImg.naturalWidth > 0) {
+        ctx.drawImage(beachBgImg, 0, 0, outputCanvas.width, outputCanvas.height);
+    } else {
+        ctx.fillStyle = '#add8e6';
+        ctx.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
+    }
+
+    // ② 自撮りモードなら画面を鏡反転させる（人物描画用）
+    if (currentFacingMode === 'user') {
+        ctx.translate(outputCanvas.width, 0);
+        ctx.scale(-1, 1);
+    }
+
+    // ③ 切り抜きマスク（人間の形）を作って、人物だけを100%クッキリ描画
+    maskCtx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+    maskCtx.drawImage(results.segmentationMask, 0, 0, maskCanvas.width, maskCanvas.height);
+    
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.drawImage(maskCanvas, 0, 0, outputCanvas.width, outputCanvas.height);
+    
+    ctx.globalCompositeOperation = 'destination-over';
+    ctx.drawImage(results.image, 0, 0, outputCanvas.width, outputCanvas.height);
+    ctx.restore(); // 反転や合成モードをリセット
+
+    // ④ 切り抜かれた人間の手前に、スリムなかき太郎を人数分描画
+    if (latestFaceResults && latestFaceResults.multiFaceLandmarks && latestFaceResults.multiFaceLandmarks.length > 0) {
+        for (let i = 0; i < latestFaceResults.multiFaceLandmarks.length; i++) {
+            const landmarks = latestFaceResults.multiFaceLandmarks[i];
             
             let anchorPoint = (currentFacingMode === 'user') ? landmarks[21] : landmarks[251]; 
-            let x = (currentFacingMode === 'user') ? (1 - anchorPoint.x) * canvas.width : anchorPoint.x * canvas.width;
-            const y = anchorPoint.y * canvas.height;
+            let x = (currentFacingMode === 'user') ? (1 - anchorPoint.x) * outputCanvas.width : anchorPoint.x * outputCanvas.width;
+            const y = anchorPoint.y * outputCanvas.height;
             
             const chin = landmarks[152];
             const forehead = landmarks[10];
-            const faceSize = Math.abs(chin.y - forehead.y) * canvas.height;
+            const faceSize = Math.abs(chin.y - forehead.y) * outputCanvas.height;
             
+            // 💡 かき太郎専用の縦長スリム比率
             const charWidth = faceSize * 0.85;  
             const charHeight = faceSize * 1.4; 
             
-            const charX = x - charWidth * 1.9; 
-            const charY = y + charHeight * -0.05;
+            // 📐 足元がしっかり肩に乗る絶妙な配置コード
+            const charX = x - charWidth * 1.5; 
+            const charY = y + charHeight * 0.15;
 
-            // ⚠️ 画像が壊れていたり無くても、エラーで全体を止めない安全装置
             if (charImg.complete && charImg.naturalWidth > 0) {
                 ctx.drawImage(charImg, charX, charY, charWidth, charHeight);
             }
@@ -221,30 +264,27 @@ faceMesh.onResults((results) => {
     }
 });
 
+// 📸 カメラの起動
 function startCamera(facingMode) {
     loading.style.display = 'block';
     if (activeCamera) { activeCamera.stop(); }
 
-    if (facingMode === 'user') {
-        video.classList.add('mirror');
-    } else {
-        video.classList.remove('mirror');
-    }
-
     activeCamera = new Camera(video, {
-        onFrame: async () => { await faceMesh.send({ image: video }); },
+        onFrame: async () => {
+            // 2つのAIに同時にカメラ映像を送って超高速処理
+            await faceMesh.send({ image: video });
+            await selfieSegmentation.send({ image: video });
+        },
         width: 1280,
         height: 720,
         facingMode: facingMode
     });
 
     activeCamera.start().catch(err => {
-        // スマホ側で過去に「拒否」が記憶されている場合、案内を出します
         loading.innerText = "❌ カメラのアクセスを許可してください（スマホの設定画面を確認）";
     });
 }
 
-// 🚀 AIの準備を待たずに、とにかく真っ先にカメラの起動を命令する
 startCamera(currentFacingMode);
 
 switchBtn.addEventListener('click', () => {
@@ -252,23 +292,9 @@ switchBtn.addEventListener('click', () => {
     startCamera(currentFacingMode);
 });
 
+// 📸 写真撮影システム（画面に映っている綺麗な切り抜き状態をそのままパシャリ！）
 shutterBtn.addEventListener('click', () => {
-    const saveCanvas = document.createElement('canvas');
-    saveCanvas.width = canvas.width;
-    saveCanvas.height = canvas.height;
-    const saveCtx = saveCanvas.getContext('2d');
-
-    if (currentFacingMode === 'user') {
-        saveCtx.translate(saveCanvas.width, 0);
-        saveCtx.scale(-1, 1); 
-        saveCtx.drawImage(video, 0, 0, saveCanvas.width, saveCanvas.height);
-        saveCtx.setTransform(1, 0, 0, 1, 0, 0); 
-    } else {
-        saveCtx.drawImage(video, 0, 0, saveCanvas.width, saveCanvas.height);
-    }
-
-    saveCtx.drawImage(canvas, 0, 0);
-    resultImage.src = saveCanvas.toDataURL('image/jpeg', 0.85);
+    resultImage.src = outputCanvas.toDataURL('image/jpeg', 0.9);
     resultContainer.style.display = 'flex';
 });
 
