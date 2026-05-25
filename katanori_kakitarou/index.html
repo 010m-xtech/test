@@ -254,8 +254,8 @@ selfieSegmentation.onResults((results) => {
             const charHeight = faceSize * 1.4; 
             
             // 📐 足元がしっかり肩に乗る絶妙な配置コード
-            const charX = x - charWidth * 1.5; 
-            const charY = y + charHeight * 0.15;
+            const charX = x - charWidth * 1.75; 
+            const charY = y + charHeight * 0.1;
 
             if (charImg.complete && charImg.naturalWidth > 0) {
                 ctx.drawImage(charImg, charX, charY, charWidth, charHeight);
