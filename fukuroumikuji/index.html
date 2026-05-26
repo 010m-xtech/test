@@ -16,7 +16,7 @@
             overflow: hidden;
         }
         
-        /* ゲーム画面全体 */
+        /* ゲーム画面全体（背景画像を表示） */
         #game-container {
             position: relative;
             width: 100%;
@@ -28,15 +28,25 @@
             overflow: hidden;
         }
 
-        /* 筒とフクロウのタップエリア（実機サイズに最適化） */
-        #cylinder-container {
+        /* ★位置ズレ対策：画面全体をタップ判定エリアにします */
+        #tap-zone {
             position: absolute;
-            top: 20%;   
+            top: 0; left: 0; width: 100%; height: 100%;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        /* ★動かすターゲット：フクロウと筒が描かれている中央エリアをプログラムで枠組み化
+           全画面タップに連動して、この中央部分だけをピンポイントで激しく揺らします！
+        */
+        #cylinder-graphic-layer {
+            position: absolute;
+            top: 18%;   
             left: 28%;  
             width: 44%; 
-            height: 45%;
-            z-index: 10;
-            cursor: pointer;
+            height: 48%;
+            z-index: 5;
+            pointer-events: none; /* タップの邪魔をしない設定 */
         }
 
         /* 筒とフクロウが揺れるアニメーション */
@@ -48,7 +58,7 @@
             100% { transform: translate(4px, 2px) rotate(1.5deg); }
         }
 
-        /* おみくじパワーゲージ（空の溝の上に、純粋な光のバーをぴったり重ねます） */
+        /* おみくじパワーゲージ（溝の上に光のバーをぴったり重ねます） */
         #gauge-wrapper {
             position: absolute;
             bottom: 4.8%; 
@@ -147,7 +157,9 @@
 <body>
 
 <div id="game-container">
-    <div id="cylinder-container"></div>
+    <div id="tap-zone"></div>
+
+    <div id="cylinder-graphic-layer"></div>
 
     <div id="gauge-wrapper">
         <div class="gauge-fill" id="gauge-fill"></div>
@@ -165,7 +177,8 @@
 </div>
 
 <script>
-    const cylinderContainer = document.getElementById('cylinder-container');
+    const tapZone = document.getElementById('tap-zone');
+    const cylinderGraphicLayer = document.getElementById('cylinder-graphic-layer');
     const gaugeFill = document.getElementById('gauge-fill');
     const smokeEffect = document.getElementById('smoke-effect');
     const resultModal = document.getElementById('result-modal');
@@ -190,13 +203,13 @@
         { title: "末吉🍀", comment: "『肉豆腐』のネギをよーく見てみて！もしかしたらハート型に見えるネギが紛れ込んでいるかも…？" }
     ];
 
-    // 連打タップイベント
-    cylinderContainer.addEventListener('pointerdown', (e) => {
+    // 全画面どこを連打しても反応するイベント
+    tapZone.addEventListener('pointerdown', (e) => {
         if (isFinished) return;
         e.preventDefault();
 
-        // 筒とフクロウを揺らす
-        cylinderContainer.classList.add('shake-cylinder');
+        // 画面全体ではなく「フクロウと筒のある中央部分だけ」をガタガタ揺らす
+        cylinderGraphicLayer.classList.add('shake-cylinder');
 
         // パワーを12%ずつプラス
         power += 12;
@@ -210,8 +223,9 @@
         }
     });
 
-    cylinderContainer.addEventListener('pointerup', () => cylinderContainer.classList.remove('shake-cylinder'));
-    cylinderContainer.addEventListener('pointerleave', () => cylinderContainer.classList.remove('shake-cylinder'));
+    // 指を離したら揺れをストップ
+    tapZone.addEventListener('pointerup', () => cylinderGraphicLayer.classList.remove('shake-cylinder'));
+    tapZone.addEventListener('pointerleave', () => cylinderGraphicLayer.classList.remove('shake-cylinder'));
 
     // 自動減少処理（サボるとゲージが左へ縮む）
     decayTimer = setInterval(() => {
@@ -224,7 +238,7 @@
     // 煙ドロン演出
     function triggerSmokeAndResult() {
         isFinished = true;
-        cylinderContainer.classList.remove('shake-cylinder');
+        cylinderGraphicLayer.classList.remove('shake-cylinder');
 
         const result = fortunes[Math.floor(Math.random() * fortunes.length)];
         fortuneTitle.innerText = result.title;
