@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>今宵の運試し - おみくじゲーム</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #0b1326;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        /* ゲームコンテナ（スマホ縦画面を想定） */
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            height: 100vh;
+            background: linear-gradient(to bottom, #111a36, #2d3e6b, #191426);
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+        /* 背景要素の代用（お祭り・名古屋城の雰囲気をグラフィックスで表現） */
+        .castle-silhouette {
+            position: absolute;
+            top: 15%; left: 50%; transform: translateX(-50%);
+            width: 80%; height: 35%;
+            background: rgba(255, 255, 255, 0.05);
+            clip-path: polygon(50% 0%, 80% 30%, 75% 30%, 90% 60%, 85% 60%, 100% 100%, 0% 100%, 15% 60%, 10% 60%, 25% 30%, 20% 30%);
+            border-bottom: 4px solid rgba(212, 175, 55, 0.3);
+        }
+        /* 提灯（夏祭り会場の雰囲気） */
+        .lanterns {
+            position: absolute;
+            top: 10%; width: 100%; display: flex; justify-content: space-around;
+        }
+        .lantern {
+            width: 25px; height: 35px; background: #ff4d4d; border-radius: 10px;
+            box-shadow: 0 0 15px #ff4d4d; animation: glow 1.5s infinite alternate;
+        }
+        @keyframes glow { from { opacity: 0.6; } to { opacity: 1; } }
+
+        /* タイトルテキスト（サイズ分上部に配置） */
+        h1.title {
+            position: absolute;
+            top: 5%; width: 100%; text-align: center;
+            font-size: 2rem; font-weight: bold;
+            color: #e6b422; text-shadow: 0 0 10px rgba(230,180,34,0.6), 2px 2px 4px #000;
+            z-index: 10;
+        }
+
+        /* おみくじの筒エリア */
+        #cylinder-wrapper {
+            position: absolute;
+            top: 40%; left: 50%; transform: translate(-50%, -30%);
+            width: 140px; height: 260px;
+            cursor: pointer; z-index: 5;
+        }
+        /* 筒の上のフクロウ（マスコット） */
+        .owl-mascot {
+            position: absolute;
+            top: -55px; left: 50%; transform: translateX(-50%);
+            width: 75px; height: 75px;
+            background: #222; border: 3px solid #fff; border-radius: 50%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        .owl-eyes { display: flex; gap: 4px; }
+        .owl-eye { width: 22px; height: 14px; background: #fff; border-radius: 10px; position: relative; overflow: hidden;}
+        .owl-eye::after { content: ''; position: absolute; bottom: 0; left: 3px; width: 14px; height: 7px; background: #000; border-radius: 10px 10px 0 0; }
+        .owl-cheeks { display: flex; gap: 30px; position: absolute; bottom: 15px; }
+        .owl-cheek { width: 10px; height: 6px; background: #ff3333; border-radius: 50%; }
+
+        /* おみくじの筒本体 */
+        .cylinder {
+            width: 100%; height: 100%;
+            background: linear-gradient(135deg, #8a5a36, #5c3a21);
+            border: 4px solid #d4af37; border-radius: 15px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.6), 0 10px 25px rgba(0,0,0,0.5);
+            display: flex; justify-content: center; align-items: center;
+            transition: transform 0.1s;
+        }
+        .cylinder-label {
+            background: #fff; color: #000; padding: 15px 8px;
+            font-weight: bold; font-size: 1.2rem; border-radius: 5px;
+            writing-mode: vertical-rl; letter-spacing: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        /* 揺れるアニメーション */
+        .shake { animation: shakeAnim 0.15s infinite alternate; }
+        @keyframes shakeAnim {
+            0% { transform: translate(0, 0) rotate(-4deg); }
+            100% { transform: translate(4px, 2px) rotate(4deg); }
+        }
+
+        /* おみくじパワーゲージ */
+        #gauge-container {
+            position: absolute;
+            bottom: 12%; left: 50%; transform: translateX(-50%);
+            width: 80%; text-align: center;
+        }
+        .gauge-label { font-size: 0.9rem; margin-bottom: 8px; color: #bbb; letter-spacing: 1px; }
+        .gauge-border {
+            width: 100%; height: 24px; background: rgba(0,0,0,0.5);
+            border: 2px solid #5c3a21; border-radius: 12px; padding: 2px; overflow: hidden;
+        }
+        .gauge-fill {
+            width: 0%; height: 100%;
+            background: linear-gradient(90deg, #ffcc00, #ff6600);
+            border-radius: 10px; transition: width 0.1s ease;
+            box-shadow: 0 0 10px #ffcc00;
+        }
+
+        /* 結果画面ポップアップ */
+        #result-modal {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.75);
+            display: none; justify-content: center; align-items: center;
+            z-index: 100; opacity: 0; transition: opacity 0.3s ease;
+        }
+        .modal-content {
+            background: #fff; color: #333; width: 85%;
+            padding: 30px 20px; border-radius: 20px; text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transform: scale(0.7); transition: transform 0.3s ease;
+            position: relative;
+        }
+        /* 飛び出すおみくじ棒の簡易演出 */
+        .stick-effect {
+            width: 30px; height: 120px; background: #e3c197;
+            margin: -80px auto 15px auto; border-radius: 5px 5px 0 0;
+            border: 2px solid #8a5a36; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .fortune-title { font-size: 2.5rem; font-weight: bold; color: #d93333; margin-bottom: 15px; }
+        .fortune-comment { font-size: 1.1rem; line-height: 1.6; color: #555; margin-bottom: 25px; font-weight: bold;}
+        .restart-btn {
+            background: #e6b422; color: #fff; border: none; padding: 12px 35px;
+            font-size: 1rem; font-weight: bold; border-radius: 25px; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(230,180,34,0.4);
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <h1 class="title">今宵の運試し</h1>
+    <div class="lanterns">
+        <div class="lantern"></div><div class="lantern"></div><div class="lantern"></div><div class="lantern"></div>
+    </div>
+    <div class="castle-silhouette"></div>
+
+    <div id="cylinder-wrapper">
+        <div class="owl-mascot">
+            <div class="owl-eyes"><div class="owl-eye"></div><div class="owl-eye"></div></div>
+            <div class="owl-cheeks"><div class="owl-cheek"></div><div class="owl-cheek"></div></div>
+        </div>
+        <div class="cylinder" id="cylinder">
+            <div class="cylinder-label">振ってね</div>
+        </div>
+    </div>
+
+    <div id="gauge-container">
+        <div class="gauge-label">おみくじパワー</div>
+        <div class="gauge-border">
+            <div class="gauge-fill" id="gauge-fill"></div>
+        </div>
+    </div>
+
+    <div id="result-modal">
+        <div class="modal-content" id="modal-content">
+            <div class="stick-effect"></div>
+            <div class="fortune-title" id="fortune-title">大吉!!</div>
+            <div class="fortune-comment" id="fortune-comment">コメントがここに入ります。</div>
+            <button class="restart-btn" onclick="resetGame()">もう一度引く</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const cylinderWrapper = document.getElementById('cylinder-wrapper');
+    const cylinder = document.getElementById('cylinder');
+    const gaugeFill = document.getElementById('gauge-fill');
+    const resultModal = document.getElementById('result-modal');
+    const modalContent = document.getElementById('modal-content');
+    const fortuneTitle = document.getElementById('fortune-title');
+    const fortuneComment = document.getElementById('fortune-comment');
+
+    let power = 0;
+    let isFinished = false;
+    let autoDecayInterval;
+
+    // おみくじデータ（お店のメニューに合わせた特製コメント）
+    const fortunes = [
+        { title: "超大吉🎉", comment: "今日は焼き餃子と肉豆腐で、運気も胃袋も大満足間違いなし！" },
+        { title: "大吉🌟", comment: "熱々の焼き餃子をタレにつける瞬間、最高のアイデアが閃く予感！" },
+        { title: "大吉🌟", comment: "串カツにソースを絡めるように、素敵なご縁が次々と絡みついてくるでしょう！" },
+        { title: "吉✨", comment: "肉豆腐の味がじっくり染みるように、あなたの優しさが周囲にしみわたる一日になります。" },
+        { title: "吉✨", comment: "焼き餃子をシェアすると対人運が急上昇！美味しい笑顔が広がります。" },
+        { title: "中吉👍", comment: "今日なら串カツの衣を一口もこぼさずに食べられる、驚異の集中力を発揮できそう！" },
+        { title: "中吉👍", comment: "肉豆腐のスープを一口飲むごとに、日頃の疲れがじんわりと癒されていきます。" },
+        { title: "小吉😊", comment: "焼き餃子の焼き目が完璧な黄金色になるくらい、日常の小さなラッキーが訪れます。" },
+        { title: "小吉😊", comment: "串カツの注文タイミングが神がかる予感。揚げたての一番美味しい瞬間を逃さないで！" },
+        { title: "末吉🍀", comment: "肉豆腐のネギがハート型に見えるかも？よーく器の中を観察してみてね！" }
+    ];
+
+    // タップ・クリック時のイベント
+    cylinderWrapper.addEventListener('pointerdown', (e) => {
+        if (isFinished) return;
+        e.preventDefault();
+
+        // 筒を揺らす
+        cylinder.classList.add('shake');
+
+        // パワーアップ
+        power += 12; 
+        if (power > 100) power = 100;
+        gaugeFill.style.width = power + '%';
+
+        // ゲージMAXで結果発表
+        if (power >= 100) {
+            endGame();
+        }
+    });
+
+    cylinderWrapper.addEventListener('pointerup', () => {
+        cylinder.classList.remove('shake');
+    });
+
+    // 放置すると少しずつゲージが下がる仕様（連打を促す）
+    autoDecayInterval = setInterval(() => {
+        if (isFinished || power <= 0) return;
+        power -= 3;
+        if (power < 0) power = 0;
+        gaugeFill.style.width = power + '%';
+    }, 150);
+
+    function endGame() {
+        isFinished = true;
+        cylinder.classList.remove('shake');
+        
+        // ランダムで運勢を決定
+        const result = fortunes[Math.floor(Math.random() * fortunes.length)];
+        fortuneTitle.innerText = result.title;
+        fortuneComment.innerText = result.comment;
+
+        // モーダル表示のアニメーション
+        setTimeout(() => {
+            resultModal.style.display = 'flex';
+            setTimeout(() => {
+                resultModal.style.opacity = '1';
+                modalContent.style.transform = 'scale(1)';
+            }, 50);
+        }, 400);
+    }
+
+    function resetGame() {
+        power = 0;
+        isFinished = false;
+        gaugeFill.style.width = '0%';
+        resultModal.style.opacity = '0';
+        modalContent.style.transform = 'scale(0.7)';
+        setTimeout(() => {
+            resultModal.style.display = 'none';
+        }, 300);
+    }
+</script>
+</body>
+</html>
