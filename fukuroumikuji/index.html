@@ -28,53 +28,46 @@
             overflow: hidden;
         }
 
-        /* ★位置ズレ対策：画面全体をタップ判定エリアにします */
+        /* ★画面全体を覆うタップ感知レイヤー */
         #tap-zone {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             cursor: pointer;
-            z-index: 10;
+            z-index: 20; /* 確実に最前面でタップを感知 */
         }
 
-        /* ★動かすターゲット：フクロウと筒が描かれている中央エリアをプログラムで枠組み化
-           全画面タップに連動して、この中央部分だけをピンポイントで激しく揺らします！
+        /* ★解決の肝：連打された時、フクロウと筒が含まれる「画面全体」を激しく揺らします。
+           これにより、画像が1枚に合体していても、フクロウと筒が確実にガタガタと動きます！
         */
-        #cylinder-graphic-layer {
-            position: absolute;
-            top: 18%;   
-            left: 28%;  
-            width: 44%; 
-            height: 48%;
-            z-index: 5;
-            pointer-events: none; /* タップの邪魔をしない設定 */
+        .shake-active {
+            animation: globalShake 0.08s infinite alternate;
+        }
+        @keyframes globalShake {
+            0% { transform: translate(-4px, -2px) rotate(-0.5deg); }
+            100% { transform: translate(4px, 2px) rotate(0.5deg); }
         }
 
-        /* 筒とフクロウが揺れるアニメーション */
-        .shake-cylinder {
-            animation: cylinderShake 0.08s infinite alternate;
-        }
-        @keyframes cylinderShake {
-            0% { transform: translate(-4px, -2px) rotate(-1.5deg); }
-            100% { transform: translate(4px, 2px) rotate(1.5deg); }
-        }
-
-        /* おみくじパワーゲージ（溝の上に光のバーをぴったり重ねます） */
+        /* ゲージ位置ズレ徹底目隠しカバー */
         #gauge-wrapper {
             position: absolute;
-            bottom: 4.8%; 
-            left: 24.5%;
-            width: 51%;
-            height: 3.5%;
-            z-index: 5;
-            border-radius: 10px;
+            bottom: 4.5%; 
+            left: 23%;    
+            width: 54%;   
+            height: 4.2%; 
+            z-index: 10;
+            background: #19120b; /* イラストの枠線と同化する暗い茶黒 */
+            border-radius: 12px;
+            padding: 4px 6px;    
             overflow: hidden;
             pointer-events: none;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.9);
         }
         .gauge-fill {
-            width: 0%; /* 最初は0%（空っぽからスタート） */
+            width: 0%; /* スタート時は完全に0%（中身は何も見えない空っぽ状態） */
             height: 100%;
-            background: linear-gradient(90deg, #ffea00, #ff6600, #ff0055);
-            box-shadow: 0 0 15px #ffcc00;
+            background: linear-gradient(90deg, #ffcc00, #ff6600, #ff0055);
+            border-radius: 8px;
+            box-shadow: 0 0 12px #ffcc00;
             transition: width 0.06s ease-out;
         }
 
@@ -159,8 +152,6 @@
 <div id="game-container">
     <div id="tap-zone"></div>
 
-    <div id="cylinder-graphic-layer"></div>
-
     <div id="gauge-wrapper">
         <div class="gauge-fill" id="gauge-fill"></div>
     </div>
@@ -177,8 +168,8 @@
 </div>
 
 <script>
+    const gameContainer = document.getElementById('game-container');
     const tapZone = document.getElementById('tap-zone');
-    const cylinderGraphicLayer = document.getElementById('cylinder-graphic-layer');
     const gaugeFill = document.getElementById('gauge-fill');
     const smokeEffect = document.getElementById('smoke-effect');
     const resultModal = document.getElementById('result-modal');
@@ -203,13 +194,13 @@
         { title: "末吉🍀", comment: "『肉豆腐』のネギをよーく見てみて！もしかしたらハート型に見えるネギが紛れ込んでいるかも…？" }
     ];
 
-    // 全画面どこを連打しても反応するイベント
+    // 連打タップイベント
     tapZone.addEventListener('pointerdown', (e) => {
         if (isFinished) return;
         e.preventDefault();
 
-        // 画面全体ではなく「フクロウと筒のある中央部分だけ」をガタガタ揺らす
-        cylinderGraphicLayer.classList.add('shake-cylinder');
+        // 画像全体（フクロウ・筒を含む）をガタガタ揺らすクラスを追加
+        gameContainer.classList.add('shake-active');
 
         // パワーを12%ずつプラス
         power += 12;
@@ -224,8 +215,8 @@
     });
 
     // 指を離したら揺れをストップ
-    tapZone.addEventListener('pointerup', () => cylinderGraphicLayer.classList.remove('shake-cylinder'));
-    tapZone.addEventListener('pointerleave', () => cylinderGraphicLayer.classList.remove('shake-cylinder'));
+    tapZone.addEventListener('pointerup', () => gameContainer.classList.remove('shake-active'));
+    tapZone.addEventListener('pointerleave', () => gameContainer.classList.remove('shake-active'));
 
     // 自動減少処理（サボるとゲージが左へ縮む）
     decayTimer = setInterval(() => {
@@ -238,7 +229,7 @@
     // 煙ドロン演出
     function triggerSmokeAndResult() {
         isFinished = true;
-        cylinderGraphicLayer.classList.remove('shake-cylinder');
+        gameContainer.classList.remove('shake-active');
 
         const result = fortunes[Math.floor(Math.random() * fortunes.length)];
         fortuneTitle.innerText = result.title;
