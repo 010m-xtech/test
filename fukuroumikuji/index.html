@@ -16,20 +16,20 @@
             overflow: hidden;
         }
         
-        /* ゲーム画面全体（決定したイラストデータをプログラム内に直接埋め込みました） */
+        /* ゲーム画面全体（GitHubにアップロードした高画質画像を背景に指定） */
         #game-container {
             position: relative;
             width: 100%;
             max-width: 450px;
             height: 100vh;
-            /* リンク切れを起こさないデータ埋め込み方式に変更 */
-            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 800" width="100%" height="100%"><rect width="450" height="800" fill="%230b1326"/><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%25" stop-color="%23111a36"/><stop offset="40%25" stop-color="%232d3e6b"/><stop offset="70%25" stop-color="%23191426"/></linearGradient><rect width="450" height="800" fill="url(%23g)"/><polygon points="225,120 370,230 340,230 390,340 360,340 420,480 30,480 90,340 60,340 110,230 80,230" fill="rgba(255,255,255,0.04)" stroke="rgba(212,175,55,0.2)" stroke-width="2"/><circle cx="80" cy="180" r="16" fill="%23ff4d4d" filter="blur(2px)"/><circle cx="160" cy="140" r="14" fill="%23ff4d4d" filter="blur(2px)"/><circle cx="290" cy="140" r="14" fill="%23ff4d4d" filter="blur(2px)"/><circle cx="370" cy="180" r="16" fill="%23ff4d4d" filter="blur(2px)"/><path d="M120 180 L80 240 M330 180 L370 240" stroke="%23ff4d4d" stroke-width="3"/><path d="M0 450 Q 110 520 225 460 T 450 480" fill="none" stroke="%23ff8800" stroke-width="2" stroke-dasharray="5,5"/><path d="M30 480 L140 480 L140 700 L30 700 Z" fill="%23cc3333" opacity="0.8"/><path d="M310 480 L420 480 L420 700 L310 700 Z" fill="%23cc3333" opacity="0.8"/><text x="50" y="540" fill="%23fff" font-size="28" font-weight="bold" writing-mode="tb">夏祭り</text><text x="350" y="540" fill="%23fff" font-size="24" font-weight="bold" writing-mode="tb">おみくじ</text><path d="M110 480 Q 160 450 225 480 T 340 460" fill="none" stroke="%23fff" opacity="0.15" stroke-width="40"/><circle cx="110" cy="420" r="14" fill="%23ffaa00"/><circle cx="170" cy="440" r="12" fill="%23ffaa00"/><circle cx="280" cy="440" r="12" fill="%23ffaa00"/><circle cx="340" cy="420" r="14" fill="%23ffaa00"/><text x="225" y="76" fill="%23e6b422" font-size="36" font-weight="bold" text-anchor="middle" font-family="sans-serif">今宵の運試し</text><g transform="translate(145,280)"><rect width="160" height="280" rx="20" fill="linear-gradient(135deg, %238a5a36, %235c3a21)" stroke="%23d4af37" stroke-width="5"/><rect x="15" y="20" width="130" height="240" rx="10" fill="none" stroke="%23ffaa00" stroke-width="2" stroke-dasharray="10,5"/><rect x="52" y="70" width="56" height="140" rx="8" fill="%23fff"/><text x="80" y="115" fill="%23000" font-size="32" font-weight="bold" text-anchor="middle">振</text><text x="80" y="155" fill="%23000" font-size="32" font-weight="bold" text-anchor="middle">っ</text><text x="80" y="195" fill="%23000" font-size="32" font-weight="bold" text-anchor="middle">て</text><text x="80" y="235" fill="%23000" font-size="32" font-weight="bold" text-anchor="middle">ね</text></g><g transform="translate(190,210)"><circle cx="35" cy="35" r="35" fill="%23222" stroke="%23fff" stroke-width="3"/><ellipse cx="20" cy="30" rx="11" ry="7" fill="%23fff"/><ellipse cx="50" cy="30" rx="11" ry="7" fill="%23fff"/><circle cx="20" cy="32" r="5" fill="%23000"/><circle cx="50" cy="32" r="5" fill="%23000"/><ellipse cx="10" cy="38" rx="5" ry="3" fill="%23ff3333"/><ellipse cx="60" cy="38" rx="5" ry="3" fill="%23ff3333"/><polygon points="35,38 31,46 39,46" fill="%23ffaa00"/><path d="M10 45 Q -10 60 5 65 Q 15 55 20 48" fill="%23222"/><path d="M25 60 Q 35 68 45 60" fill="none" stroke="%23fff" stroke-width="3"/></g><path d="M110 740 H 340" stroke="%233a2312" stroke-width="24" stroke-linecap="round"/><text x="225" y="715" fill="%23bbb" font-size="16" text-anchor="middle">おみくじパワー</text></svg>') no-repeat center center;
+            /* アップロードした画像ファイルを直接読み込みます */
+            background: url('background.png') no-repeat center center;
             background-size: cover;
             box-shadow: 0 0 20px rgba(0,0,0,0.8);
             overflow: hidden;
         }
 
-        /* 画面連打用の全画面タップゾーン（どこを叩いても反応するように改善） */
+        /* 全画面連打エリア（どこを叩いてもゲームが反応します） */
         #tap-zone {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -37,7 +37,7 @@
             z-index: 10;
         }
 
-        /* タップ時にゲーム画面全体がガタガタ揺れる演出 */
+        /* タップした時に画面全体（筒）がガタガタ震える演出 */
         .shake-bg {
             animation: shakeAnim 0.08s infinite alternate;
         }
@@ -46,13 +46,13 @@
             100% { transform: translate(3px, 2px) rotate(0.5deg); }
         }
 
-        /* パワーゲージ（画面最下部のゲージ溝にぴったり重なるように調整） */
+        /* おみくじパワーゲージ（イラスト最下部の溝の位置にピッタリ合わせました） */
         #gauge-wrapper {
             position: absolute;
-            bottom: 7.2%; 
-            left: 25%;
-            width: 50%;
-            height: 2%;
+            bottom: 4.8%; 
+            left: 24.5%;
+            width: 51%;
+            height: 3.5%;
             z-index: 15;
             border-radius: 10px;
             overflow: hidden;
@@ -91,7 +91,7 @@
         #result-modal {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(8, 13, 26, 0.75);
+            background: rgba(8, 13, 26, 0.8);
             display: none;
             justify-content: center;
             align-items: center;
@@ -176,6 +176,7 @@
     let isFinished = false;
     let decayTimer;
 
+    // お店の特別メニューを絡めたおもしろおみくじコメント
     const fortunes = [
         { title: "超大吉🎉", comment: "運気MAX！今日食べる『焼き餃子』と『肉豆腐』は、間違いなく人生で一番美味しいと感じるでしょう！" },
         { title: "大吉🌟", comment: "熱々の『焼き餃子』をタレにつけるその瞬間、探していた最高のアイデアがパッと閃く予感！" },
@@ -196,7 +197,7 @@
 
         gameContainer.classList.add('shake-bg');
 
-        // パワー充填（1タップあたり12%アップ）
+        // パワー充填
         power += 12;
         if (power > 100) power = 100;
         gaugeFill.style.width = power + '%';
@@ -209,7 +210,7 @@
     tapZone.addEventListener('pointerup', () => gameContainer.classList.remove('shake-bg'));
     tapZone.addEventListener('pointerleave', () => gameContainer.classList.remove('shake-bg'));
 
-    // 放置すると少しずつゲージが減る（連打を促す仕様）
+    // 連打サボり時の減少処理
     decayTimer = setInterval(() => {
         if (isFinished || power <= 0) return;
         power -= 4;
@@ -217,7 +218,7 @@
         gaugeFill.style.width = power + '%';
     }, 150);
 
-    // 煙ドロン！演出
+    // 煙ドロン演出
     function triggerSmokeAndResult() {
         isFinished = true;
         gameContainer.classList.remove('shake-bg');
