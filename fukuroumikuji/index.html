@@ -28,18 +28,18 @@
             overflow: hidden;
         }
 
-        /* 筒とフクロウのタップエリア */
+        /* 筒とフクロウのタップエリア（実機サイズに最適化） */
         #cylinder-container {
             position: absolute;
-            top: 18%;   
+            top: 20%;   
             left: 28%;  
             width: 44%; 
-            height: 48%;
+            height: 45%;
             z-index: 10;
             cursor: pointer;
         }
 
-        /* 連打時のシェイクアニメーション */
+        /* 筒とフクロウが揺れるアニメーション */
         .shake-cylinder {
             animation: cylinderShake 0.08s infinite alternate;
         }
@@ -48,29 +48,23 @@
             100% { transform: translate(4px, 2px) rotate(1.5deg); }
         }
 
-        /* ★修正の肝：イラストのゲージ部分を覆う隠しマスク
-           最初は100%（真っ黒のマスクでイラストのゲージを完全に隠す）からスタートし、
-           連打するとこの黒いエリアが右側に縮んでいくことで、イラストの輝くゲージが露出します。
-        */
+        /* おみくじパワーゲージ（空の溝の上に、純粋な光のバーをぴったり重ねます） */
         #gauge-wrapper {
             position: absolute;
             bottom: 4.8%; 
             left: 24.5%;
             width: 51%;
             height: 3.5%;
-            z-index: 15;
+            z-index: 5;
             border-radius: 10px;
             overflow: hidden;
             pointer-events: none;
-            background: transparent;
-            display: flex;
-            justify-content: flex-end; /* 右側から黒いカバーを縮めるための設定 */
         }
-        .gauge-mask {
-            width: 100%; /* 初期状態は100%真っ黒（＝空っぽに見える） */
+        .gauge-fill {
+            width: 0%; /* 最初は0%（空っぽからスタート） */
             height: 100%;
-            background: #1d150c; /* イラストの溝の木の色に近い暗い茶黒 */
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+            background: linear-gradient(90deg, #ffea00, #ff6600, #ff0055);
+            box-shadow: 0 0 15px #ffcc00;
             transition: width 0.06s ease-out;
         }
 
@@ -156,7 +150,7 @@
     <div id="cylinder-container"></div>
 
     <div id="gauge-wrapper">
-        <div class="gauge-mask" id="gauge-mask"></div>
+        <div class="gauge-fill" id="gauge-fill"></div>
     </div>
 
     <div id="smoke-effect"></div>
@@ -172,7 +166,7 @@
 
 <script>
     const cylinderContainer = document.getElementById('cylinder-container');
-    const gaugeMask = document.getElementById('gauge-mask');
+    const gaugeFill = document.getElementById('gauge-fill');
     const smokeEffect = document.getElementById('smoke-effect');
     const resultModal = document.getElementById('result-modal');
     const modalContent = document.getElementById('modal-content');
@@ -201,14 +195,15 @@
         if (isFinished) return;
         e.preventDefault();
 
+        // 筒とフクロウを揺らす
         cylinderContainer.classList.add('shake-cylinder');
 
         // パワーを12%ずつプラス
         power += 12;
         if (power > 100) power = 100;
         
-        // パワーが増えるほど、黒いマスクの横幅を減らして、下のライトアップゲージを露出させる
-        gaugeMask.style.width = (100 - power) + '%';
+        // 0%から純粋に右へ伸びていくバー
+        gaugeFill.style.width = power + '%';
 
         if (power >= 100) {
             triggerSmokeAndResult();
@@ -218,12 +213,12 @@
     cylinderContainer.addEventListener('pointerup', () => cylinderContainer.classList.remove('shake-cylinder'));
     cylinderContainer.addEventListener('pointerleave', () => cylinderContainer.classList.remove('shake-cylinder'));
 
-    // 連打をサボるとゲージが減る（＝黒いマスクが戻ってくる）処理
+    // 自動減少処理（サボるとゲージが左へ縮む）
     decayTimer = setInterval(() => {
         if (isFinished || power <= 0) return;
         power -= 4;
         if (power < 0) power = 0;
-        gaugeMask.style.width = (100 - power) + '%';
+        gaugeFill.style.width = power + '%';
     }, 150);
 
     // 煙ドロン演出
@@ -246,11 +241,10 @@
         }, 250);
     }
 
-    // ゲームリセット（黒いカバーを100%に引き戻す）
     function resetGame() {
         power = 0;
         isFinished = false;
-        gaugeMask.style.width = '100%';
+        gaugeFill.style.width = '0%';
         resultModal.style.opacity = '0';
         modalContent.style.transform = 'scale(0.5)';
         smokeEffect.classList.remove('smoke-burst');
