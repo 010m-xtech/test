@@ -16,37 +16,42 @@
             overflow: hidden;
         }
         
-        /* ゲーム画面全体（GitHubにアップロードした高画質画像を背景に指定） */
+        /* ゲーム画面全体 */
         #game-container {
             position: relative;
             width: 100%;
             max-width: 450px;
             height: 100vh;
-            /* アップロードした画像ファイルを直接読み込みます */
             background: url('background.png') no-repeat center center;
             background-size: cover;
             box-shadow: 0 0 20px rgba(0,0,0,0.8);
             overflow: hidden;
         }
 
-        /* 全画面連打エリア（どこを叩いてもゲームが反応します） */
-        #tap-zone {
+        /* 筒とフクロウのタップエリア */
+        #cylinder-container {
             position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            cursor: pointer;
+            top: 18%;   
+            left: 28%;  
+            width: 44%; 
+            height: 48%;
             z-index: 10;
+            cursor: pointer;
         }
 
-        /* タップした時に画面全体（筒）がガタガタ震える演出 */
-        .shake-bg {
-            animation: shakeAnim 0.08s infinite alternate;
+        /* 連打時のシェイクアニメーション */
+        .shake-cylinder {
+            animation: cylinderShake 0.08s infinite alternate;
         }
-        @keyframes shakeAnim {
-            0% { transform: translate(-3px, -2px) rotate(-0.5deg); }
-            100% { transform: translate(3px, 2px) rotate(0.5deg); }
+        @keyframes cylinderShake {
+            0% { transform: translate(-4px, -2px) rotate(-1.5deg); }
+            100% { transform: translate(4px, 2px) rotate(1.5deg); }
         }
 
-        /* おみくじパワーゲージ（イラスト最下部の溝の位置にピッタリ合わせました） */
+        /* ★修正の肝：イラストのゲージ部分を覆う隠しマスク
+           最初は100%（真っ黒のマスクでイラストのゲージを完全に隠す）からスタートし、
+           連打するとこの黒いエリアが右側に縮んでいくことで、イラストの輝くゲージが露出します。
+        */
         #gauge-wrapper {
             position: absolute;
             bottom: 4.8%; 
@@ -57,12 +62,15 @@
             border-radius: 10px;
             overflow: hidden;
             pointer-events: none;
+            background: transparent;
+            display: flex;
+            justify-content: flex-end; /* 右側から黒いカバーを縮めるための設定 */
         }
-        .gauge-fill {
-            width: 0%;
+        .gauge-mask {
+            width: 100%; /* 初期状態は100%真っ黒（＝空っぽに見える） */
             height: 100%;
-            background: linear-gradient(90deg, #ffea00, #ff6600, #ff0055);
-            box-shadow: 0 0 15px #ffcc00;
+            background: #1d150c; /* イラストの溝の木の色に近い暗い茶黒 */
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
             transition: width 0.06s ease-out;
         }
 
@@ -145,10 +153,10 @@
 <body>
 
 <div id="game-container">
-    <div id="tap-zone"></div>
+    <div id="cylinder-container"></div>
 
     <div id="gauge-wrapper">
-        <div class="gauge-fill" id="gauge-fill"></div>
+        <div class="gauge-mask" id="gauge-mask"></div>
     </div>
 
     <div id="smoke-effect"></div>
@@ -163,9 +171,8 @@
 </div>
 
 <script>
-    const gameContainer = document.getElementById('game-container');
-    const tapZone = document.getElementById('tap-zone');
-    const gaugeFill = document.getElementById('gauge-fill');
+    const cylinderContainer = document.getElementById('cylinder-container');
+    const gaugeMask = document.getElementById('gauge-mask');
     const smokeEffect = document.getElementById('smoke-effect');
     const resultModal = document.getElementById('result-modal');
     const modalContent = document.getElementById('modal-content');
@@ -176,7 +183,6 @@
     let isFinished = false;
     let decayTimer;
 
-    // お店の特別メニューを絡めたおもしろおみくじコメント
     const fortunes = [
         { title: "超大吉🎉", comment: "運気MAX！今日食べる『焼き餃子』と『肉豆腐』は、間違いなく人生で一番美味しいと感じるでしょう！" },
         { title: "大吉🌟", comment: "熱々の『焼き餃子』をタレにつけるその瞬間、探していた最高のアイデアがパッと閃く予感！" },
@@ -191,37 +197,39 @@
     ];
 
     // 連打タップイベント
-    tapZone.addEventListener('pointerdown', (e) => {
+    cylinderContainer.addEventListener('pointerdown', (e) => {
         if (isFinished) return;
         e.preventDefault();
 
-        gameContainer.classList.add('shake-bg');
+        cylinderContainer.classList.add('shake-cylinder');
 
-        // パワー充填
+        // パワーを12%ずつプラス
         power += 12;
         if (power > 100) power = 100;
-        gaugeFill.style.width = power + '%';
+        
+        // パワーが増えるほど、黒いマスクの横幅を減らして、下のライトアップゲージを露出させる
+        gaugeMask.style.width = (100 - power) + '%';
 
         if (power >= 100) {
             triggerSmokeAndResult();
         }
     });
 
-    tapZone.addEventListener('pointerup', () => gameContainer.classList.remove('shake-bg'));
-    tapZone.addEventListener('pointerleave', () => gameContainer.classList.remove('shake-bg'));
+    cylinderContainer.addEventListener('pointerup', () => cylinderContainer.classList.remove('shake-cylinder'));
+    cylinderContainer.addEventListener('pointerleave', () => cylinderContainer.classList.remove('shake-cylinder'));
 
-    // 連打サボり時の減少処理
+    // 連打をサボるとゲージが減る（＝黒いマスクが戻ってくる）処理
     decayTimer = setInterval(() => {
         if (isFinished || power <= 0) return;
         power -= 4;
         if (power < 0) power = 0;
-        gaugeFill.style.width = power + '%';
+        gaugeMask.style.width = (100 - power) + '%';
     }, 150);
 
     // 煙ドロン演出
     function triggerSmokeAndResult() {
         isFinished = true;
-        gameContainer.classList.remove('shake-bg');
+        cylinderContainer.classList.remove('shake-cylinder');
 
         const result = fortunes[Math.floor(Math.random() * fortunes.length)];
         fortuneTitle.innerText = result.title;
@@ -238,10 +246,11 @@
         }, 250);
     }
 
+    // ゲームリセット（黒いカバーを100%に引き戻す）
     function resetGame() {
         power = 0;
         isFinished = false;
-        gaugeFill.style.width = '0%';
+        gaugeMask.style.width = '100%';
         resultModal.style.opacity = '0';
         modalContent.style.transform = 'scale(0.5)';
         smokeEffect.classList.remove('smoke-burst');
