@@ -36,7 +36,7 @@
             z-index: 20;
         }
 
-        /* 連打された時に画面全体（背景画像ごと）を激しく揺らすアニメーション */
+        /* 連打された時に画面全体を激しく揺らすアニメーション */
         .shake-active {
             animation: globalShake 0.08s infinite alternate;
         }
@@ -53,13 +53,16 @@
             pointer-events: none;
         }
 
-        /* 背景の豪華な筒の真上にぴったり重なるように、かき太郎の位置を固定 */
+        /* ★かき太郎のサイズと位置を修正
+           ・width（横幅）を135pxから「90px」に変更して、ジャスト2/3の大きさに縮小しました。
+           ・top（上からの位置）を17.5%から「11.5%」に引き上げ、筒の頭の上にぴったり着地させました。
+        */
         #char-kakitaro {
             position: absolute;
-            top: 17.5%; /* 背景の筒のすぐ上に乗る絶妙な高さ */
+            top: 11.5%; /* 【ココ！】数値を小さくして、位置を上に引き上げました */
             left: 50%;
             transform: translateX(-50%);
-            width: 135px; /* キャラクターが綺麗に引き立つベストサイズ */
+            width: 90px;  /* 【ココ！】横幅を小さくして、全体のサイズを2/3にしました */
             height: auto;
         }
 
@@ -71,8 +74,8 @@
             width: 90%;
             height: 4.5%;
             z-index: 10;
-            background: rgba(11, 19, 38, 0.85); /* 高級感のある深い紺色のクリア枠 */
-            border: 3px solid #00a8e8; /* 爽やかなライトブルーの縁取り */
+            background: rgba(11, 19, 38, 0.85); 
+            border: 3px solid #00a8e8; 
             border-radius: 18px;
             padding: 2px 4px;    
             overflow: hidden;
@@ -80,9 +83,8 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
         .gauge-fill {
-            width: 0%; /* 最初は完全に0%（空っぽ） */
+            width: 0%; 
             height: 100%;
-            /* 南国のまぶしい太陽と海をイメージしたサイケデリックグラデーション */
             background: linear-gradient(90deg, #00dbde, #fc00ff);
             border-radius: 12px;
             box-shadow: 0 0 15px #00dbde;
@@ -201,7 +203,7 @@
     let power = 0;
     let isFinished = false;
 
-    // 「かき太郎」専用おみくじ結果テキスト（修正版）
+    // 修正済みの「かき太郎」専用おみくじ結果テキスト
     const fortunes = [
         { title: "超大吉🌊", comment: "運気最最高潮！今日食べる『焼き牡蠣』は、濃厚なミルクが口いっぱいに広がって感動するレベルでしょう！" },
         { title: "大吉☀️", comment: "太陽があなたを祝福しています！『牡蠣フライ』にレモンを絞った瞬間、最高の幸運が飛び込んでくる予感！" },
@@ -219,14 +221,12 @@
         if (isFinished) return;
         e.preventDefault();
 
-        // 画面全体を一斉にガタガタ揺らす
         gameContainer.classList.add('shake-active');
 
         // 1回タップで11%プラス
         power += 11;
         if (power > 100) power = 100;
         
-        // ゲージを右へ伸ばす
         gaugeFill.style.width = power + '%';
 
         if (power >= 100) {
@@ -234,11 +234,9 @@
         }
     });
 
-    // 指を離したら揺れをストップ
     tapZone.addEventListener('pointerup', () => gameContainer.classList.remove('shake-active'));
     tapZone.addEventListener('pointerleave', () => gameContainer.classList.remove('shake-active'));
 
-    // 煙ドロン演出
     function triggerSmokeAndResult() {
         isFinished = true;
         gameContainer.classList.remove('shake-active');
