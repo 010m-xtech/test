@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>かき太郎 浜辺の運試し</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #011627;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* ゲーム画面全体（保存した海辺の背景画像をここに指定します） */
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            height: 100vh;
+            background: url('background.png') no-repeat center center;
+            background-size: cover;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            overflow: hidden;
+        }
+
+        /* 画面全体を覆うタップ感知レイヤー */
+        #tap-zone {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            cursor: pointer;
+            z-index: 20;
+        }
+
+        /* ★おみくじの筒オブジェクト */
+        #omikuji-barrel {
+            position: absolute;
+            bottom: 23%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 160px;
+            height: 260px;
+            background: linear-gradient(135deg, #cc9966, #8a5a36);
+            border: 4px solid #4a2e1b;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 5;
+        }
+        #barrel-label {
+            background: white;
+            padding: 20px 10px;
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #333;
+            border-radius: 8px;
+            letter-spacing: 4px;
+            writing-mode: vertical-rl;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.2);
+        }
+
+        /* ★筒の上に乗る「かき太郎」の位置・サイズ設定 */
+        #char-kakitaro {
+            position: absolute;
+            bottom: 245px; /* 筒の真上にぴったり乗るように配置 */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 130px;  /* キャラクターが綺麗に見える最適なサイズ */
+            height: auto;
+            z-index: 6;
+        }
+
+        /* 連打された時に画面全体（背景・かき太郎・筒）を一括で揺らす神演出 */
+        .shake-active {
+            animation: globalShake 0.08s infinite alternate;
+        }
+        @keyframes globalShake {
+            0% { transform: translate(-4px, -2px) rotate(-0.5deg); }
+            100% { transform: translate(4px, 2px) rotate(0.5deg); }
+        }
+
+        /* ゲージ枠（前作のベスト数値をベースに海の家風にアレンジ） */
+        #gauge-wrapper {
+            position: absolute;
+            bottom: 4.8%;
+            left: 4.8%;
+            width: 90.5%;
+            height: 4.5%;
+            z-index: 10;
+            background: rgba(0, 28, 48, 0.8); /* 海の夜空に溶け込む深いクリアネイビー */
+            border: 3px solid #00a8e8; /* さわやかなライトブルーの縁取り */
+            border-radius: 18px;
+            padding: 2px 4px;    
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .gauge-fill {
+            width: 0%; 
+            height: 100%;
+            /* 南国のまぶしい太陽と海をイメージしたトロピカルグラデーション */
+            background: linear-gradient(90deg, #00dbde, #fc00ff);
+            border-radius: 12px;
+            box-shadow: 0 0 15px #00dbde;
+            transition: width 0.08s ease-out;
+        }
+
+        /* 潮風ドロンッ演出エフェクト */
+        #smoke-effect {
+            position: absolute;
+            top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
+            width: 350px; height: 350px;
+            background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(135,206,235,0.6) 50%, rgba(255,255,255,0) 75%);
+            border-radius: 50%;
+            z-index: 50;
+            pointer-events: none;
+            opacity: 0;
+        }
+        .smoke-burst {
+            animation: smokeAnim 0.5s ease-out forwards;
+        }
+        @keyframes smokeAnim {
+            0% { transform: translate(-50%, -50%) scale(0.1); opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 0.8; }
+            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+        }
+
+        /* 結果ポップアップ（海の家リゾート風） */
+        #result-modal {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(1, 22, 39, 0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .modal-content {
+            background: #fffdf9;
+            color: #333;
+            width: 85%;
+            padding: 35px 20px;
+            border-radius: 24px;
+            text-align: center;
+            border: 4px solid #00a8e8;
+            box-shadow: 0 10px 35px rgba(0,0,0,0.6);
+            transform: scale(0.5);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .fortune-title {
+            font-size: 3.2rem;
+            font-weight: bold;
+            color: #ff007f;
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+        }
+        .fortune-comment {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #222;
+            margin-bottom: 30px;
+            font-weight: bold;
+            background: #e8f7fe;
+            padding: 18px 12px;
+            border-radius: 14px;
+        }
+        .restart-btn {
+            background: linear-gradient(135deg, #00a8e8, #0077be);
+            color: #fff;
+            border: none;
+            padding: 15px 45px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,168,232,0.3);
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="tap-zone"></div>
+
+    <div id="omikuji-barrel">
+        <img src="avatar_test.png" id="char-kakitaro" alt="かき太郎">
+        <div id="barrel-label">振ってね</div>
+    </div>
+
+    <div id="gauge-wrapper">
+        <div class="gauge-fill" id="gauge-fill"></div>
+    </div>
+
+    <div id="smoke-effect"></div>
+
+    <div id="result-modal">
+        <div class="modal-content" id="modal-content">
+            <div class="fortune-title" id="fortune-title">超大吉🎉</div>
+            <div class="fortune-comment" id="fortune-comment">コメント</div>
+            <button class="restart-btn" onclick="resetGame()">もう一度占う</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const gameContainer = document.getElementById('game-container');
+    const tapZone = document.getElementById('tap-zone');
+    const gaugeFill = document.getElementById('gauge-fill');
+    const smokeEffect = document.getElementById('smoke-effect');
+    const resultModal = document.getElementById('result-modal');
+    const modalContent = document.getElementById('modal-content');
+    const fortuneTitle = document.getElementById('fortune-title');
+    const fortuneComment = document.getElementById('fortune-comment');
+
+    let power = 0;
+    let isFinished = false;
+
+    // 新店舗「かき太郎」専用の海辺おみくじコメント
+    const fortunes = [
+        { title: "超大吉🌊", comment: "運気最最高潮！今日食べる『焼き牡蠣』は、濃厚なミルクが口いっぱいに広がって感動するレベルでしょう！" },
+        { title: "大吉☀️", comment: "太陽があなたを祝福しています！『牡蠣フライ』にレモンを絞った瞬間、最高の幸運が飛び込んでくる予感！" },
+        { title: "大吉☀️", comment: "波に乗るように運気が急上昇！冷たいビールや炭酸ドリンクを飲むと、さらに元気がみなぎります！" },
+        { title: "吉し特選✨", comment: "『牡蠣のガンガン焼き』のフタを開けるときのような、ハラハラワクワクする最高の喜びがこのあと訪れます！" },
+        { title: "吉✨", comment: "浜辺の心地いい潮風が、あなたのモヤモヤを全部吹き飛ばして、スッキリ素晴らしい一日になります。" },
+        { title: "中吉🐚", comment: "今日なら、熱々の焼き牡蠣の殻をツルッと一発で綺麗に剥き身にできる、驚異の器用さが備わっています！" },
+        { title: "中吉🐚", comment: "お隣の席や、近くにいる人と目が合ったらニッコリ笑ってみて。最高の海の仲間（ご縁）が増える兆し。" },
+        { title: "小吉🍹", comment: "冷たいソフトクリームやフライドポテトを頼むと吉。お腹も心も満たされてハッピーに！" },
+        { title: "末吉波🍀", comment: "砂浜をよーく歩いてみて。もしかしたら星の形をした綺麗な貝殻や、小さくて良いことが見つかるかも…？" }
+    ];
+
+    // 連打タップイベント
+    tapZone.addEventListener('pointerdown', (e) => {
+        if (isFinished) return;
+        e.preventDefault();
+
+        // 画面全体（背景・かき太郎・筒）をガタガタ揺らす
+        gameContainer.classList.add('shake-active');
+
+        // 1回タップで11%プラス（約9〜10回で100% MAX）
+        power += 11;
+        if (power > 100) power = 100;
+        
+        // ゲージを右へ伸ばす
+        gaugeFill.style.width = power + '%';
+
+        if (power >= 100) {
+            triggerSmokeAndResult();
+        }
+    });
+
+    // 指を離したら揺れをストップ
+    tapZone.addEventListener('pointerup', () => gameContainer.classList.remove('shake-active'));
+    tapZone.addEventListener('pointerleave', () => gameContainer.classList.remove('shake-active'));
+
+    // 演出処理
+    function triggerSmokeAndResult() {
+        isFinished = true;
+        gameContainer.classList.remove('shake-active');
+
+        const result = fortunes[Math.floor(Math.random() * fortunes.length)];
+        fortuneTitle.innerText = result.title;
+        fortuneComment.innerText = result.comment;
+
+        smokeEffect.classList.add('smoke-burst');
+
+        setTimeout(() => {
+            resultModal.style.display = 'flex';
+            setTimeout(() => {
+                resultModal.style.opacity = '1';
+                modalContent.style.transform = 'scale(1)';
+            }, 50);
+        }, 250);
+    }
+
+    function resetGame() {
+        power = 0;
+        isFinished = false;
+        gaugeFill.style.width = '0%';
+        resultModal.style.opacity = '0';
+        modalContent.style.transform = 'scale(0.5)';
+        smokeEffect.classList.remove('smoke-burst');
+        
+        setTimeout(() => {
+            resultModal.style.display = 'none';
+        }, 400);
+    }
+</script>
+</body>
+</html>
