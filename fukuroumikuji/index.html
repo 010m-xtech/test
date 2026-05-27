@@ -28,17 +28,15 @@
             overflow: hidden;
         }
 
-        /* ★画面全体を覆うタップ感知レイヤー */
+        /* 画面全体を覆うタップ感知レイヤー */
         #tap-zone {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             cursor: pointer;
-            z-index: 20; /* 確実に最前面でタップを感知 */
+            z-index: 20;
         }
 
-        /* ★解決の肝：連打された時、フクロウと筒が含まれる「画面全体」を激しく揺らします。
-           これにより、画像が1枚に合体していても、フクロウと筒が確実にガタガタと動きます！
-        */
+        /* 連打された時に画面全体を揺らすアニメーション */
         .shake-active {
             animation: globalShake 0.08s infinite alternate;
         }
@@ -47,28 +45,30 @@
             100% { transform: translate(4px, 2px) rotate(0.5deg); }
         }
 
-        /* ゲージ位置ズレ徹底目隠しカバー */
+        /* ★スクリーンショットの位置にぴったりフィットさせた新ゲージ設計
+           元の画像の「おみくじパワー」木枠のなめらかな黒い溝に完璧に重なるよう、
+           位置（bottom, left）と幅・高さをドット単位で超精密に合わせました。
+        */
         #gauge-wrapper {
             position: absolute;
-            bottom: 4.5%; 
-            left: 23%;    
-            width: 54%;   
-            height: 4.2%; 
+            bottom: 14.5%; /* 木枠の黒い溝の高さにぴったり合わせました */
+            left: 4.8%;    /* 溝の左端スタート位置にジャストフィット */
+            width: 83.2%;  /* 溝の右端までを綺麗にカバーする長さ */
+            height: 4.4%;  /* 溝の縦幅をピタッと覆う太さ */
             z-index: 10;
-            background: #19120b; /* イラストの枠線と同化する暗い茶黒 */
-            border-radius: 12px;
-            padding: 4px 6px;    
+            background: #120b05; /* 木枠内の影と同化する、深い黒茶色（これで0%の時は完全に空っぽに見えます） */
+            border-radius: 18px;
+            padding: 2px 4px;    
             overflow: hidden;
             pointer-events: none;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.9);
         }
         .gauge-fill {
-            width: 0%; /* スタート時は完全に0%（中身は何も見えない空っぽ状態） */
+            width: 0%; /* スタート時は完全に0%（中身は空っぽ） */
             height: 100%;
             background: linear-gradient(90deg, #ffcc00, #ff6600, #ff0055);
-            border-radius: 8px;
+            border-radius: 12px;
             box-shadow: 0 0 12px #ffcc00;
-            transition: width 0.06s ease-out;
+            transition: width 0.08s ease-out;
         }
 
         /* 煙のドロンッ演出エフェクト */
@@ -179,7 +179,6 @@
 
     let power = 0;
     let isFinished = false;
-    let decayTimer;
 
     const fortunes = [
         { title: "超大吉🎉", comment: "運気MAX！今日食べる『焼き餃子』と『肉豆腐』は、間違いなく人生で一番美味しいと感じるでしょう！" },
@@ -199,14 +198,14 @@
         if (isFinished) return;
         e.preventDefault();
 
-        // 画像全体（フクロウ・筒を含む）をガタガタ揺らすクラスを追加
+        // 画面全体（フクロウ・筒）をガタガタ揺らす
         gameContainer.classList.add('shake-active');
 
-        // パワーを12%ずつプラス
-        power += 12;
+        // ★新仕様：1回タップで11%プラス（約9〜10回のタップで100% MAXになります）
+        power += 11;
         if (power > 100) power = 100;
         
-        // 0%から純粋に右へ伸びていくバー
+        // ゲージを右へ伸ばす
         gaugeFill.style.width = power + '%';
 
         if (power >= 100) {
@@ -218,13 +217,8 @@
     tapZone.addEventListener('pointerup', () => gameContainer.classList.remove('shake-active'));
     tapZone.addEventListener('pointerleave', () => gameContainer.classList.remove('shake-active'));
 
-    // 自動減少処理（サボるとゲージが左へ縮む）
-    decayTimer = setInterval(() => {
-        if (isFinished || power <= 0) return;
-        power -= 4;
-        if (power < 0) power = 0;
-        gaugeFill.style.width = power + '%';
-    }, 150);
+    // ★新仕様：自動減少タイマー（サボると減る処理）を完全に消去しました！
+    // 途中でタップを止めても、溜まったゲージはそのままキープされます。
 
     // 煙ドロン演出
     function triggerSmokeAndResult() {
