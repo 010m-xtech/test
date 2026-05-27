@@ -45,25 +45,25 @@
             100% { transform: translate(4px, 2px) rotate(0.5deg); }
         }
 
-        /* ★スクリーンショットの位置にぴったりフィットさせた新ゲージ設計
-           元の画像の「おみくじパワー」木枠のなめらかな黒い溝に完璧に重なるよう、
-           位置（bottom, left）と幅・高さをドット単位で超精密に合わせました。
+        /* ★ゲージの位置・サイズ調整エリア
+           浮いてしまったゲージを下げるため、bottom を「14.5%」から「4.8%」付近に下げ、
+           右端を伸ばすために width を「83.2%」から「90.5%」に広げました。
         */
         #gauge-wrapper {
             position: absolute;
-            bottom: 14.5%; /* 木枠の黒い溝の高さにぴったり合わせました */
-            left: 4.8%;    /* 溝の左端スタート位置にジャストフィット */
-            width: 83.2%;  /* 溝の右端までを綺麗にカバーする長さ */
-            height: 4.4%;  /* 溝の縦幅をピタッと覆う太さ */
+            bottom: 4.8%; /* 【ココ！】数値を小さくして、元の木枠の溝まで下げました */
+            left: 4.8%;   /* 【ココ！】左端のスタート位置（はみ出る場合は 5.0% などに微調整） */
+            width: 90.5%; /* 【ココ！】数値を大きくして、右端のMAX位置まで長くしました */
+            height: 4.5%; /* 【ココ！】縦の太さ（溝にぴったり埋まる太さに微調整） */
             z-index: 10;
-            background: #120b05; /* 木枠内の影と同化する、深い黒茶色（これで0%の時は完全に空っぽに見えます） */
+            background: #120b05; /* 木枠内の影と同化する深い黒茶色 */
             border-radius: 18px;
             padding: 2px 4px;    
             overflow: hidden;
             pointer-events: none;
         }
         .gauge-fill {
-            width: 0%; /* スタート時は完全に0%（中身は空っぽ） */
+            width: 0%; /* スタート時は完全に0% */
             height: 100%;
             background: linear-gradient(90deg, #ffcc00, #ff6600, #ff0055);
             border-radius: 12px;
@@ -201,11 +201,11 @@
         // 画面全体（フクロウ・筒）をガタガタ揺らす
         gameContainer.classList.add('shake-active');
 
-        // ★新仕様：1回タップで11%プラス（約9〜10回のタップで100% MAXになります）
+        // 1回タップで11%プラス（約9〜10回で100% MAX）
         power += 11;
         if (power > 100) power = 100;
         
-        // ゲージを右へ伸ばす
+        // ゲージを右へ伸びていく
         gaugeFill.style.width = power + '%';
 
         if (power >= 100) {
@@ -216,9 +216,6 @@
     // 指を離したら揺れをストップ
     tapZone.addEventListener('pointerup', () => gameContainer.classList.remove('shake-active'));
     tapZone.addEventListener('pointerleave', () => gameContainer.classList.remove('shake-active'));
-
-    // ★新仕様：自動減少タイマー（サボると減る処理）を完全に消去しました！
-    // 途中でタップを止めても、溜まったゲージはそのままキープされます。
 
     // 煙ドロン演出
     function triggerSmokeAndResult() {
