@@ -8,7 +8,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
-            background-color: #011627;
+            background-color: #0b1326;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -16,7 +16,7 @@
             overflow: hidden;
         }
         
-        /* ゲーム画面全体（保存した海辺の背景画像をここに指定します） */
+        /* ゲーム画面全体（背景画像を表示） */
         #game-container {
             position: relative;
             width: 100%;
@@ -36,74 +36,53 @@
             z-index: 20;
         }
 
-        /* ★おみくじの筒オブジェクト */
-        #omikuji-barrel {
-            position: absolute;
-            bottom: 23%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 160px;
-            height: 260px;
-            background: linear-gradient(135deg, #cc9966, #8a5a36);
-            border: 4px solid #4a2e1b;
-            border-radius: 20px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 5;
-        }
-        #barrel-label {
-            background: white;
-            padding: 20px 10px;
-            font-size: 1.6rem;
-            font-weight: bold;
-            color: #333;
-            border-radius: 8px;
-            letter-spacing: 4px;
-            writing-mode: vertical-rl;
-            box-shadow: inset 0 0 8px rgba(0,0,0,0.2);
-        }
-
-        /* ★筒の上に乗る「かき太郎」の位置・サイズ設定 */
-        #char-kakitaro {
-            position: absolute;
-            bottom: 245px; /* 筒の真上にぴったり乗るように配置 */
-            left: 50%;
-            transform: translateX(-50%);
-            width: 130px;  /* キャラクターが綺麗に見える最適なサイズ */
-            height: auto;
-            z-index: 6;
-        }
-
-        /* 連打された時に画面全体（背景・かき太郎・筒）を一括で揺らす神演出 */
+        /* 連打された時に画面全体（背景画像ごと）を激しく揺らすアニメーション */
         .shake-active {
             animation: globalShake 0.08s infinite alternate;
         }
         @keyframes globalShake {
-            0% { transform: translate(-4px, -2px) rotate(-0.5deg); }
-            100% { transform: translate(4px, 2px) rotate(0.5deg); }
+            0% { transform: translate(-5px, -3px) rotate(-0.5deg); }
+            100% { transform: translate(5px, 3px) rotate(0.5deg); }
         }
 
-        /* ゲージ枠（前作のベスト数値をベースに海の家風にアレンジ） */
+        /* かき太郎の配置レイヤー */
+        #character-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        /* 背景の豪華な筒の真上にぴったり重なるように、かき太郎の位置を固定 */
+        #char-kakitaro {
+            position: absolute;
+            top: 17.5%; /* 背景の筒のすぐ上に乗る絶妙な高さ */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 135px; /* キャラクターが綺麗に引き立つベストサイズ */
+            height: auto;
+        }
+
+        /* 砂浜リゾート風パワーゲージ */
         #gauge-wrapper {
             position: absolute;
             bottom: 4.8%;
-            left: 4.8%;
-            width: 90.5%;
+            left: 5%;
+            width: 90%;
             height: 4.5%;
             z-index: 10;
-            background: rgba(0, 28, 48, 0.8); /* 海の夜空に溶け込む深いクリアネイビー */
-            border: 3px solid #00a8e8; /* さわやかなライトブルーの縁取り */
+            background: rgba(11, 19, 38, 0.85); /* 高級感のある深い紺色のクリア枠 */
+            border: 3px solid #00a8e8; /* 爽やかなライトブルーの縁取り */
             border-radius: 18px;
             padding: 2px 4px;    
             overflow: hidden;
             pointer-events: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
         .gauge-fill {
-            width: 0%; 
+            width: 0%; /* 最初は完全に0%（空っぽ） */
             height: 100%;
-            /* 南国のまぶしい太陽と海をイメージしたトロピカルグラデーション */
+            /* 南国のまぶしい太陽と海をイメージしたサイケデリックグラデーション */
             background: linear-gradient(90deg, #00dbde, #fc00ff);
             border-radius: 12px;
             box-shadow: 0 0 15px #00dbde;
@@ -135,7 +114,7 @@
         #result-modal {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(1, 22, 39, 0.85);
+            background: rgba(11, 19, 38, 0.9);
             display: none;
             justify-content: center;
             align-items: center;
@@ -190,9 +169,8 @@
 <div id="game-container">
     <div id="tap-zone"></div>
 
-    <div id="omikuji-barrel">
+    <div id="character-layer">
         <img src="avatar_test.png" id="char-kakitaro" alt="かき太郎">
-        <div id="barrel-label">振ってね</div>
     </div>
 
     <div id="gauge-wrapper">
@@ -203,7 +181,7 @@
 
     <div id="result-modal">
         <div class="modal-content" id="modal-content">
-            <div class="fortune-title" id="fortune-title">超大吉🎉</div>
+            <div class="fortune-title" id="fortune-title">超大吉🌊</div>
             <div class="fortune-comment" id="fortune-comment">コメント</div>
             <button class="restart-btn" onclick="resetGame()">もう一度占う</button>
         </div>
@@ -223,17 +201,17 @@
     let power = 0;
     let isFinished = false;
 
-    // 新店舗「かき太郎」専用の海辺おみくじコメント
+    // 「かき太郎」専用おみくじ結果テキスト
     const fortunes = [
         { title: "超大吉🌊", comment: "運気最最高潮！今日食べる『焼き牡蠣』は、濃厚なミルクが口いっぱいに広がって感動するレベルでしょう！" },
         { title: "大吉☀️", comment: "太陽があなたを祝福しています！『牡蠣フライ』にレモンを絞った瞬間、最高の幸運が飛び込んでくる予感！" },
         { title: "大吉☀️", comment: "波に乗るように運気が急上昇！冷たいビールや炭酸ドリンクを飲むと、さらに元気がみなぎります！" },
-        { title: "吉し特選✨", comment: "『牡蠣のガンガン焼き』のフタを開けるときのような、ハラハラワクワクする最高の喜びがこのあと訪れます！" },
+        { title: "吉✨", comment: "『牡蠣のガンガン焼き』のフタを開けるときのような、ハラハラワクワクする最高の喜びがこのあと訪れます！" },
         { title: "吉✨", comment: "浜辺の心地いい潮風が、あなたのモヤモヤを全部吹き飛ばして、スッキリ素晴らしい一日になります。" },
         { title: "中吉🐚", comment: "今日なら、熱々の焼き牡蠣の殻をツルッと一発で綺麗に剥き身にできる、驚異の器用さが備わっています！" },
         { title: "中吉🐚", comment: "お隣の席や、近くにいる人と目が合ったらニッコリ笑ってみて。最高の海の仲間（ご縁）が増える兆し。" },
         { title: "小吉🍹", comment: "冷たいソフトクリームやフライドポテトを頼むと吉。お腹も心も満たされてハッピーに！" },
-        { title: "末吉波🍀", comment: "砂浜をよーく歩いてみて。もしかしたら星の形をした綺麗な貝殻や、小さくて良いことが見つかるかも…？" }
+        { title: "末吉🍀", comment: "砂浜をよーく歩いてみて。もしかしたら星の形をした綺麗な貝殻や、小さくて良いことが見つかるかも…？" }
     ];
 
     // 連打タップイベント
@@ -241,7 +219,7 @@
         if (isFinished) return;
         e.preventDefault();
 
-        // 画面全体（背景・かき太郎・筒）をガタガタ揺らす
+        // 画面全体（背景の豪華な筒・乗っているかき太郎）を一斉にガタガタ揺らす
         gameContainer.classList.add('shake-active');
 
         // 1回タップで11%プラス（約9〜10回で100% MAX）
@@ -260,7 +238,7 @@
     tapZone.addEventListener('pointerup', () => gameContainer.classList.remove('shake-active'));
     tapZone.addEventListener('pointerleave', () => gameContainer.classList.remove('shake-active'));
 
-    // 演出処理
+    // 煙ドロン演出
     function triggerSmokeAndResult() {
         isFinished = true;
         gameContainer.classList.remove('shake-active');
