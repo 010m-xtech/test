@@ -53,16 +53,13 @@
             pointer-events: none;
         }
 
-        /* ★かき太郎のサイズと位置を修正
-           ・width（横幅）を135pxから「90px」に変更して、ジャスト2/3の大きさに縮小しました。
-           ・top（上からの位置）を17.5%から「11.5%」に引き上げ、筒の頭の上にぴったり着地させました。
-        */
+        /* かき太郎のサイズと位置（筒の上・2/3縮小サイズ固定） */
         #char-kakitaro {
             position: absolute;
-            top: 11.5%; /* 【ココ！】数値を小さくして、位置を上に引き上げました */
+            top: 11.5%; 
             left: 50%;
             transform: translateX(-50%);
-            width: 90px;  /* 【ココ！】横幅を小さくして、全体のサイズを2/3にしました */
+            width: 90px;  
             height: auto;
         }
 
@@ -128,7 +125,7 @@
             background: #fffdf9;
             color: #333;
             width: 85%;
-            padding: 35px 20px;
+            padding: 30px 20px;
             border-radius: 24px;
             text-align: center;
             border: 4px solid #00a8e8;
@@ -140,19 +137,39 @@
             font-size: 3.2rem;
             font-weight: bold;
             color: #ff007f;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             letter-spacing: 2px;
         }
         .fortune-comment {
-            font-size: 1.1rem;
-            line-height: 1.6;
+            font-size: 1.05rem;
+            line-height: 1.5;
             color: #222;
-            margin-bottom: 30px;
+            margin-bottom: 15px;
             font-weight: bold;
             background: #e8f7fe;
-            padding: 18px 12px;
+            padding: 14px 12px;
             border-radius: 14px;
         }
+        
+        /* ★新設：ラッキーアイテム用スタイリング */
+        .lucky-item-box {
+            background: linear-gradient(135deg, #fff0f5, #ffe4e1);
+            border: 2px dashed #ff69b4;
+            padding: 12px;
+            border-radius: 14px;
+            margin-bottom: 25px;
+            font-weight: bold;
+            color: #333;
+            font-size: 1.05rem;
+        }
+        .lucky-item-name {
+            color: #ff1493;
+            font-size: 1.25rem;
+            display: block;
+            margin-top: 4px;
+            text-shadow: 1px 1px 0px #fff;
+        }
+
         .restart-btn {
             background: linear-gradient(135deg, #00a8e8, #0077be);
             color: #fff;
@@ -185,6 +202,12 @@
         <div class="modal-content" id="modal-content">
             <div class="fortune-title" id="fortune-title">超大吉🌊</div>
             <div class="fortune-comment" id="fortune-comment">コメント</div>
+            
+            <div class="lucky-item-box">
+                🌴 今日のラッキーアイテム 🌴
+                <span class="lucky-item-name" id="lucky-item-name">焼き牡蠣</span>
+            </div>
+
             <button class="restart-btn" onclick="resetGame()">もう一度占う</button>
         </div>
     </div>
@@ -199,11 +222,12 @@
     const modalContent = document.getElementById('modal-content');
     const fortuneTitle = document.getElementById('fortune-title');
     const fortuneComment = document.getElementById('fortune-comment');
+    const luckyItemName = document.getElementById('lucky-item-name'); // ★追加
 
     let power = 0;
     let isFinished = false;
 
-    // 修正済みの「かき太郎」専用おみくじ結果テキスト
+    // おみくじ結果テキスト
     const fortunes = [
         { title: "超大吉🌊", comment: "運気最最高潮！今日食べる『焼き牡蠣』は、濃厚なミルクが口いっぱいに広がって感動するレベルでしょう！" },
         { title: "大吉☀️", comment: "太陽があなたを祝福しています！『牡蠣フライ』にレモンを絞った瞬間、最高の幸運が飛び込んでくる予感！" },
@@ -216,6 +240,18 @@
         { title: "末吉🍀", comment: "周りをよーく見渡してみて。お店の中やあなたの身の回りに、小さくて心がほっこりするような良いことが隠れています！" }
     ];
 
+    // ★新設：ランダムで選ばれるラッキーアイテムのリスト
+    const luckyItems = [
+        "焼き牡蠣 🦪",
+        "みそとんちゃん 🐷",
+        "カキフライ 🍋",
+        "レバカツフライ 🥢",
+        "もずく酢 🌀",
+        "沖縄そば 🍜",
+        "サバ文化干し 🐟",
+        "丸ごとえび焼き 🦐"
+    ];
+
     // 連打タップイベント
     tapZone.addEventListener('pointerdown', (e) => {
         if (isFinished) return;
@@ -223,7 +259,6 @@
 
         gameContainer.classList.add('shake-active');
 
-        // 1回タップで11%プラス
         power += 11;
         if (power > 100) power = 100;
         
@@ -237,13 +272,19 @@
     tapZone.addEventListener('pointerup', () => gameContainer.classList.remove('shake-active'));
     tapZone.addEventListener('pointerleave', () => gameContainer.classList.remove('shake-active'));
 
+    // 結果表示
     function triggerSmokeAndResult() {
         isFinished = true;
         gameContainer.classList.remove('shake-active');
 
+        // 運勢のランダム決定
         const result = fortunes[Math.floor(Math.random() * fortunes.length)];
         fortuneTitle.innerText = result.title;
         fortuneComment.innerText = result.comment;
+
+        // ★ラッキーアイテムをリストから完全ランダムで1つ決定して表示
+        const randomItem = luckyItems[Math.floor(Math.random() * luckyItems.length)];
+        luckyItemName.innerText = randomItem;
 
         smokeEffect.classList.add('smoke-burst');
 
