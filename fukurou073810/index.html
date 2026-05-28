@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ビール体験アプリ</title>
+    <style>
+        body { font-family: sans-serif; background: #fff8e1; text-align: center; padding: 20px; color: #333; }
+        .container { background: white; padding: 20px; border-radius: 15px; max-width: 450px; margin: 0 auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .hidden { display: none !important; }
+        .q-title { font-weight: bold; margin-top: 20px; display: block; text-align: left; }
+        label { display: block; text-align: left; margin: 8px 0; cursor: pointer; }
+        textarea, select, input[type="number"] { width: 100%; box-sizing: border-box; padding: 10px; margin-top: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 1em; }
+        textarea { height: 60px; }
+        video { width: 100%; border-radius: 10px; margin-top: 15px; background: #000; }
+        button { width: 100%; padding: 15px; margin-top: 20px; background: #ffc107; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 1.1em; }
+        
+        /* ゲームリンクボタンのスタイル */
+        .game-link-btn { display: block; width: 100%; box-sizing: border-box; text-decoration: none; padding: 15px; margin-top: 15px; background: #ff9800; color: white; border-radius: 30px; font-weight: bold; font-size: 1.1em; text-align: center; transition: background 0.2s; border: none; cursor: pointer; font-family: sans-serif; }
+        .game-link-btn:hover { background: #e65100; }
+
+        /* 追加した案内テキスト用のスタイル */
+        .survey-guide-text { margin-top: 30px; margin-bottom: 5px; font-size: 1em; color: #333; }
+
+        /* 安心注記用のスタイル */
+        .notice-text { font-size: 10px; color: #777; text-align: left; margin-top: 30px; line-height: 1.4; border-top: 1px dashed #ddd; padding-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="step-video">
+        <h2>こだわりを見てから挑戦！</h2>
+        <video id="myVideo" src="https://010m-xtech.github.io/mymovie/026200_20260526.mp4" playsinline muted autoplay></video>
+        <div style="margin-top: 10px;">
+            <button id="muteBtn" onclick="toggleMute()" style="width: 80%; background: #4CAF50; font-size: 0.9em; padding: 10px; color:white;">
+                🔊 音を出す（ミュート解除）
+            </button>
+        </div>
+        <p id="video-msg" style="margin-top: 10px;">動画を最後まで見てね...</p>
+        <button id="toSurveyBtn" class="hidden" onclick="showSurvey()">アンケートに答えて挑戦！</button>
+    </div>
+
+    <div id="step-survey" class="hidden">
+        <h2>🍺 生ビールアンケート</h2>
+
+        <span class="q-title">A. あなたの性別を教えてください</span>
+        <select id="gender">
+            <option value="男性">男性</option>
+            <option value="女性">女性</option>
+        </select>
+
+        <span class="q-title">B. 本日のご来店人数を教えてください</span>
+        <select id="guests">
+            <option value="1人">1人</option>
+            <option value="2人">2人</option>
+            <option value="3人以上">3人以上</option>
+        </select>
+
+        <span class="q-title">1. 当店の生ビールは何点ですか？</span>
+        <select id="score">
+            <option value="5">5点（最高！）</option>
+            <option value="4">4点</option>
+            <option value="3">3点</option>
+            <option value="2">2点</option>
+            <option value="1">1点</option>
+        </select>
+
+        <span class="q-title">2. こだわりを感じますか？（複数選択可）</span>
+        <label><input type="checkbox" id="check1"> クリーミーな泡</label>
+        <label><input type="checkbox" id="check2"> なめらかな口当たり</label>
+        <label><input type="checkbox" id="check3"> 雑味のない味わい</label>
+        <label><input type="checkbox" id="check4"> 液：泡＝7：3</label>
+        <label><input type="checkbox" id="check5"> こだわりを感じる</label>
+
+        <span class="q-title">3. 飲んだ感想を教えてください</span>
+        <textarea id="comment" placeholder="感想をお聞かせください"></textarea>
+        
+        <p class="survey-guide-text">アンケートに回答したらゲームに挑戦</p>
+        <div>
+            <button class="game-link-btn" onclick="submitAndRedirect('今宵の運試し', 'https://010m-xtech.github.io/test/fukuroumikuji')">今宵の運試し</button>
+            <button class="game-link-btn" style="background: #e73c84;" onclick="submitAndRedirect('相性占い', 'https://010m-xtech.github.io/minigame/aishouranai/')">相性占い</button>
+            <button class="game-link-btn" style="background: #00aa6e;" onclick="submitAndRedirect('ARふくろうスナップ', 'https://010m-xtech.github.io/test/fukurou_nagoyajyou')">ARふくろうスナップ</button>
+        </div>
+
+        <div class="notice-text">
+            ※当システムではローカルストレージを使用しこのアプリ専用の識別番号を発行しています。個人を特定する情報は一切取得いたしません。
+        </div>
+    </div>
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const shopName = urlParams.get('shop') || "不明な店舗";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbz7V2zRpknWfArpQe-t4UXruqH0Z6CZO4W0whYIMHvUT6SBRpfP0-dMU4VbjBaQzYD2/exec"; // ★URLを変更した場合はここに新しいものを貼る
+
+    let deviceId = ""; // 識別IDを保持する変数
+
+    // ログ送信関数（★deviceIdも一緒にGASへ送るよう修正）
+    async function sendStepLog(stepName) {
+        try {
+            await fetch(GAS_URL, {
+                method: "POST",
+                mode: "no-cors",
+                body: JSON.stringify({ shop: shopName, step: stepName, deviceId: deviceId })
+            });
+        } catch (e) { console.error(e); }
+    }
+
+    // ① アクセス時：識別IDを確定させてからログを飛ばすよう修正
+    window.onload = () => {
+        // 先に記憶エリアから識別IDを読み込む（無ければその場で作る）
+        let savedId = localStorage.getItem('beer_app_device_id');
+        if (!savedId) {
+            savedId = 'dev_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
+            localStorage.setItem('beer_app_device_id', savedId);
+        }
+        deviceId = savedId; // 確定したIDをセット
+
+        // IDが確定した直後にアクセスログを送信
+        sendStepLog("①URLアクセス");
+
+        const v = document.getElementById('myVideo');
+        v.onended = () => {
+            document.getElementById('video-msg').innerText = "日々精進してまいります";
+            document.getElementById('toSurveyBtn').classList.remove('hidden');
+            if(document.getElementById('muteBtn')) document.getElementById('muteBtn').classList.add('hidden');
+        };
+    };
+
+    function toggleMute() {
+        const v = document.getElementById('myVideo');
+        const btn = document.getElementById('muteBtn');
+        if (v.muted) {
+            v.muted = false; v.volume = 1.0;
+            btn.innerText = "🔇 音を消す"; btn.style.background = "#ccc";
+        } else {
+            v.muted = true;
+            btn.innerText = "🔊 音を出す"; btn.style.background = "#4CAF50";
+        }
+    }
+
+    function showSurvey() {
+        sendStepLog("②動画視聴完了"); 
+        document.getElementById('step-video').classList.add('hidden');
+        document.getElementById('step-survey').classList.remove('hidden');
+    }
+
+    // ボタンが押されたらデータを送ってから遷移する関数
+    async function submitAndRedirect(gameName, targetUrl) {
+        sendStepLog(`③アンケート回答完了(${gameName})`); 
+        
+        const surveyData = {
+            shop: shopName,
+            gender: document.getElementById('gender').value,   
+            guests: document.getElementById('guests').value,   
+            score: document.getElementById('score').value,
+            comment: document.getElementById('comment').value,
+            p1: document.getElementById('check1').checked,
+            p2: document.getElementById('check2').checked,
+            p3: document.getElementById('check3').checked,
+            p4: document.getElementById('check4').checked,
+            p5: document.getElementById('check5').checked,
+            gameResult: `遷移先：${gameName}`,
+            deviceId: deviceId // メイン回答用にもIDを合流させる
+        };
+        
+        try {
+            await fetch(GAS_URL, { 
+                method: "POST", 
+                mode: "no-cors", 
+                body: JSON.stringify(surveyData) 
+            });
+        } catch (e) { 
+            console.error(e); 
+        } finally {
+            window.location.href = targetUrl;
+        }
+    }
+</script>
+</body>
+</html>
