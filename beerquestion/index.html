@@ -14,13 +14,42 @@
         textarea { height: 60px; }
         video { width: 100%; border-radius: 10px; margin-top: 15px; background: #000; }
         button { width: 100%; padding: 15px; margin-top: 20px; background: #ffc107; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 1.1em; }
-        
-        /* ゲームリンクボタンのスタイル */
-        .game-link-btn { display: block; width: 100%; box-sizing: border-box; text-decoration: none; padding: 15px; margin-top: 15px; background: #ff9800; color: white; border-radius: 30px; font-weight: bold; font-size: 1.1em; text-align: center; transition: background 0.2s; border: none; cursor: pointer; font-family: sans-serif; }
-        .game-link-btn:hover { background: #e65100; }
 
         /* 追加した案内テキスト用のスタイル */
-        .survey-guide-text { margin-top: 30px; margin-bottom: 5px; font-size: 1em; color: #333; }
+        .survey-guide-text { margin-top: 30px; margin-bottom: 15px; font-size: 1em; color: #333; font-weight: bold; }
+
+        /* ゲームリンクボタン：3個横並び用スタイル（3:4比率） */
+        .game-btn-container { 
+            display: flex; 
+            justify-content: space-between; 
+            gap: 8px; 
+            margin-top: 15px; 
+            box-sizing: border-box;
+        }
+        .game-link-btn { 
+            display: block; 
+            width: 32%; 
+            box-sizing: border-box;
+            background: none; 
+            border: none; 
+            padding: 0; 
+            margin: 0; 
+            cursor: pointer; 
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        .game-link-btn:hover { 
+            transform: scale(1.05); 
+        }
+        .game-link-btn:active {
+            opacity: 0.7; 
+        }
+        .game-link-btn img { 
+            width: 100%; 
+            height: auto; 
+            display: block;
+            border-radius: 8px; 
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15); 
+        }
 
         /* 安心注記用のスタイル */
         .notice-text { font-size: 10px; color: #777; text-align: left; margin-top: 30px; line-height: 1.4; border-top: 1px dashed #ddd; padding-top: 10px; }
@@ -46,12 +75,14 @@
 
         <span class="q-title">A. あなたの性別を教えてください</span>
         <select id="gender">
+            <option value="">-- 性別を選択してください --</option>
             <option value="男性">男性</option>
             <option value="女性">女性</option>
         </select>
 
         <span class="q-title">B. 本日のご来店人数を教えてください</span>
         <select id="guests">
+            <option value="">-- 人数を選択してください --</option>
             <option value="1人">1人</option>
             <option value="2人">2人</option>
             <option value="3人以上">3人以上</option>
@@ -59,6 +90,7 @@
 
         <span class="q-title">1. 当店の生ビールは何点ですか？</span>
         <select id="score">
+            <option value="">-- 点数を選択してください --</option>
             <option value="5">5点（最高！）</option>
             <option value="4">4点</option>
             <option value="3">3点</option>
@@ -77,10 +109,17 @@
         <textarea id="comment" placeholder="感想をお聞かせください"></textarea>
         
         <p class="survey-guide-text">アンケートに回答したらゲームに挑戦</p>
-        <div>
-            <button class="game-link-btn" onclick="submitAndRedirect('今宵の運試し', 'https://010m-xtech.github.io/test/momokuramikuji')">今宵の運試し</button>
-            <button class="game-link-btn" style="background: #e73c84;" onclick="submitAndRedirect('相性占い', 'https://010m-xtech.github.io/minigame/aishouranai/')">相性占い</button>
-            <button class="game-link-btn" style="background: #00aa6e;" onclick="submitAndRedirect('かき太郎を探せ', 'https://010m-xtech.github.io/minigame/momokura1/')">かき太郎を探せ</button>
+        
+        <div class="game-btn-container">
+            <button class="game-link-btn" onclick="submitAndRedirect('今宵の運試し', 'https://010m-xtech.github.io/test/momokuramikuji')">
+                <img src="btn_game01.png" alt="今宵の運試し">
+            </button>
+            <button class="game-link-btn" onclick="submitAndRedirect('相性占い', 'https://010m-xtech.github.io/minigame/aishouranai/')">
+                <img src="btn_game02.png" alt="相性占い">
+            </button>
+            <button class="game-link-btn" onclick="submitAndRedirect('かき太郎を探せ', 'https://010m-xtech.github.io/minigame/momokura1/')">
+                <img src="btn_game03.png" alt="かき太郎を探せ">
+            </button>
         </div>
 
         <div class="notice-text">
@@ -92,11 +131,10 @@
 <script>
     const urlParams = new URLSearchParams(window.location.search);
     const shopName = urlParams.get('shop') || "不明な店舗";
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbz7V2zRpknWfArpQe-t4UXruqH0Z6CZO4W0whYIMHvUT6SBRpfP0-dMU4VbjBaQzYD2/exec"; // ★URLを変更した場合はここに新しいものを貼る
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbz7V2zRpknWfArpQe-t4UXruqH0Z6CZO4W0whYIMHvUT6SBRpfP0-dMU4VbjBaQzYD2/exec"; 
 
-    let deviceId = ""; // 識別IDを保持する変数
+    let deviceId = ""; 
 
-    // ログ送信関数（★deviceIdも一緒にGASへ送るよう修正）
     async function sendStepLog(stepName) {
         try {
             await fetch(GAS_URL, {
@@ -107,17 +145,14 @@
         } catch (e) { console.error(e); }
     }
 
-    // ① アクセス時：識別IDを確定させてからログを飛ばすよう修正
     window.onload = () => {
-        // 先に記憶エリアから識別IDを読み込む（無ければその場で作る）
         let savedId = localStorage.getItem('beer_app_device_id');
         if (!savedId) {
             savedId = 'dev_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
             localStorage.setItem('beer_app_device_id', savedId);
         }
-        deviceId = savedId; // 確定したIDをセット
+        deviceId = savedId; 
 
-        // IDが確定した直後にアクセスログを送信
         sendStepLog("①URLアクセス");
 
         const v = document.getElementById('myVideo');
@@ -146,15 +181,19 @@
         document.getElementById('step-survey').classList.remove('hidden');
     }
 
-    // ボタンが押されたらデータを送ってから遷移する関数
     async function submitAndRedirect(gameName, targetUrl) {
         sendStepLog(`③アンケート回答完了(${gameName})`); 
         
+        // ★ 各項目が未選択（初期値のまま）の場合は、空文字（""）をセットする
+        const genderValue = document.getElementById('gender').value;
+        const guestsValue = document.getElementById('guests').value;
+        const scoreValue = document.getElementById('score').value;
+
         const surveyData = {
             shop: shopName,
-            gender: document.getElementById('gender').value,   
-            guests: document.getElementById('guests').value,   
-            score: document.getElementById('score').value,
+            gender: genderValue,   
+            guests: guestsValue,   
+            score: scoreValue,
             comment: document.getElementById('comment').value,
             p1: document.getElementById('check1').checked,
             p2: document.getElementById('check2').checked,
@@ -162,7 +201,7 @@
             p4: document.getElementById('check4').checked,
             p5: document.getElementById('check5').checked,
             gameResult: `遷移先：${gameName}`,
-            deviceId: deviceId // メイン回答用にもIDを合流させる
+            deviceId: deviceId 
         };
         
         try {
