@@ -16,7 +16,7 @@
             overflow: hidden;
         }
         
-        /* ゲーム画面全体 */
+        /* ゲーム画面全体（背景画像を表示） */
         #game-container {
             position: relative;
             width: 100%;
@@ -36,7 +36,7 @@
             z-index: 20;
         }
 
-        /* 連打された時に画面全体を激しく揺らすアニメーション */
+        /* 連打された時に画面全体（背景のふくろうごと）を激しく揺らすアニメーション */
         .shake-active {
             animation: globalShake 0.08s infinite alternate;
         }
@@ -45,25 +45,7 @@
             100% { transform: translate(5px, 3px) rotate(0.5deg); }
         }
 
-        /* キャラクターの配置レイヤー */
-        #character-layer {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 5;
-            pointer-events: none;
-        }
-
-        /* ふくろうのサイズと位置固定 */
-        #char-fukurou {
-            position: absolute;
-            top: 15.5%; 
-            left: 50%;
-            transform: translateX(-50%);
-            width: 110px;  
-            height: auto;
-        }
-
-        /* お祭り風パワーゲージ */
+        /* お祭り風パワーゲージ（0%から綺麗に増えていく） */
         #gauge-wrapper {
             position: absolute;
             bottom: 4.8%;
@@ -151,7 +133,7 @@
             border-radius: 14px;
         }
         
-        /* ★新設：ふくろう版ラッキーアイテム用スタイリング（ちょうちんカラー） */
+        /* ラッキーアイテム用スタイリング（ちょうちんカラー） */
         .lucky-item-box {
             background: linear-gradient(135deg, #fffaf0, #ffebcd);
             border: 2px dashed #ff9900;
@@ -188,10 +170,6 @@
 <div id="game-container">
     <div id="tap-zone"></div>
 
-    <div id="character-layer">
-        <img src="avatar_test.png" id="char-fukurou" alt="ふくろう">
-    </div>
-
     <div id="gauge-wrapper">
         <div class="gauge-fill" id="gauge-fill"></div>
     </div>
@@ -222,12 +200,11 @@
     const modalContent = document.getElementById('modal-content');
     const fortuneTitle = document.getElementById('fortune-title');
     const fortuneComment = document.getElementById('fortune-comment');
-    const luckyItemName = document.getElementById('lucky-item-name'); // ★追加
+    const luckyItemName = document.getElementById('lucky-item-name');
 
     let power = 0;
     let isFinished = false;
 
-    // もともとのふくろう版おみくじ結果テキスト（元のまま維持しています）
     const fortunes = [
         { title: "超大吉🏮", comment: "最高にツイてる夜！今夜は思いっきり笑って過ごすと、さらに運気が爆発します！" },
         { title: "大吉🌟", comment: "笑顔がこぼれる素敵な時間になりそう。大切な人と会話が弾んで絆が深まる予感！" },
@@ -235,12 +212,11 @@
         { title: "吉✨", comment: "心がホッとする嬉しい出来事がありそう。いつも通りの選択が大きなハッピーに繋がります。" },
         { title: "吉✨", comment: "お腹も心も満たされる大満足なひとときに。日頃の疲れが綺麗に吹き飛んでいきます！" },
         { title: "中吉🎉", comment: "楽しいおしゃべりが最大のパワーの源！周りの人と楽しい時間を共有してみて。" },
-        { title: "中吉🎉", comment: "直感が冴え渡る時。ふと思いついたアイデアや、食べたいと思ったものが大正解！" },
+        { title: "中吉🎉", comment: "直感が冴え渡る時。ふと思ついいたアイデアや、食べたいと思ったものが大正解！" },
         { title: "小吉👍", comment: "ちょっとした美味しいご褒美が吉。自分のペースを大切にすると、充実した時間になります。" },
-        { title: "末吉🍀", comment: "周りをゆっくり見渡してみて。あなたのすぐ近くに、小さくて心ほっこりするラッキーが隠れています。" }
+        { title: "末吉🍀", comment: "周りをゆっくり見渡してみて。あなたのすぐ近くに、小さくて心がほっこりするラッキーが隠れています。" }
     ];
 
-    // ★新設：ふくろう版・ランダムで選ばれるラッキーアイテムのリスト
     const luckyItems = [
         "焼き餃子 🥟",
         "肉豆腐 🪵",
@@ -257,6 +233,7 @@
         if (isFinished) return;
         e.preventDefault();
 
+        // 画面全体（背景のふくろうイラストごと）をガタガタ揺らす
         gameContainer.classList.add('shake-active');
 
         power += 11;
@@ -272,17 +249,14 @@
     tapZone.addEventListener('pointerup', () => gameContainer.classList.remove('shake-active'));
     tapZone.addEventListener('pointerleave', () => gameContainer.classList.remove('shake-active'));
 
-    // 結果表示
     function triggerSmokeAndResult() {
         isFinished = true;
         gameContainer.classList.remove('shake-active');
 
-        // 運勢のランダム決定
         const result = fortunes[Math.floor(Math.random() * fortunes.length)];
         fortuneTitle.innerText = result.title;
         fortuneComment.innerText = result.comment;
 
-        // ★ラッキーアイテムをリストから完全ランダムで1つ決定して表示
         const randomItem = luckyItems[Math.floor(Math.random() * luckyItems.length)];
         luckyItemName.innerText = randomItem;
 
