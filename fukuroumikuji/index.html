@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>今宵の運試し</title>
+    <title>今宵の運試しくじ</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
         body {
@@ -16,7 +16,7 @@
             overflow: hidden;
         }
         
-        /* ゲーム画面全体（背景画像を表示） */
+        /* ゲーム画面全体 */
         #game-container {
             position: relative;
             width: 100%;
@@ -36,47 +36,64 @@
             z-index: 20;
         }
 
-        /* 連打された時に画面全体を揺らすアニメーション */
+        /* 連打された時に画面全体を激しく揺らすアニメーション */
         .shake-active {
             animation: globalShake 0.08s infinite alternate;
         }
         @keyframes globalShake {
-            0% { transform: translate(-4px, -2px) rotate(-0.5deg); }
-            100% { transform: translate(4px, 2px) rotate(0.5deg); }
+            0% { transform: translate(-5px, -3px) rotate(-0.5deg); }
+            100% { transform: translate(5px, 3px) rotate(0.5deg); }
         }
 
-        /* ★ゲージの位置・サイズ調整エリア
-           浮いてしまったゲージを下げるため、bottom を「14.5%」から「4.8%」付近に下げ、
-           右端を伸ばすために width を「83.2%」から「90.5%」に広げました。
-        */
+        /* キャラクターの配置レイヤー */
+        #character-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        /* ふくろうのサイズと位置固定 */
+        #char-fukurou {
+            position: absolute;
+            top: 15.5%; 
+            left: 50%;
+            transform: translateX(-50%);
+            width: 110px;  
+            height: auto;
+        }
+
+        /* お祭り風パワーゲージ */
         #gauge-wrapper {
             position: absolute;
-            bottom: 4.8%; /* 【ココ！】数値を小さくして、元の木枠の溝まで下げました */
-            left: 4.8%;   /* 【ココ！】左端のスタート位置（はみ出る場合は 5.0% などに微調整） */
-            width: 90.5%; /* 【ココ！】数値を大きくして、右端のMAX位置まで長くしました */
-            height: 4.5%; /* 【ココ！】縦の太さ（溝にぴったり埋まる太さに微調整） */
+            bottom: 4.8%;
+            left: 5%;
+            width: 90%;
+            height: 4.5%;
             z-index: 10;
-            background: #120b05; /* 木枠内の影と同化する深い黒茶色 */
+            background: rgba(11, 19, 38, 0.85); 
+            border: 3px solid #ffaa00; 
             border-radius: 18px;
             padding: 2px 4px;    
             overflow: hidden;
             pointer-events: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
         .gauge-fill {
-            width: 0%; /* スタート時は完全に0% */
+            width: 0%; 
             height: 100%;
-            background: linear-gradient(90deg, #ffcc00, #ff6600, #ff0055);
+            background: linear-gradient(90deg, #ffcc00, #ff3300);
             border-radius: 12px;
-            box-shadow: 0 0 12px #ffcc00;
+            box-shadow: 0 0 15px #ffaa00;
             transition: width 0.08s ease-out;
         }
 
-        /* 煙のドロンッ演出エフェクト */
+        /* 演出エフェクト */
         #smoke-effect {
             position: absolute;
             top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
             width: 350px; height: 350px;
-            background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(220,220,220,0.7) 50%, rgba(255,255,255,0) 75%);
+            background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255,170,0,0.5) 50%, rgba(255,255,255,0) 75%);
             border-radius: 50%;
             z-index: 50;
             pointer-events: none;
@@ -92,11 +109,11 @@
             100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
         }
 
-        /* 結果ポップアップ */
+        /* 結果ポップアップ（お祭り・夜店風） */
         #result-modal {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(8, 13, 26, 0.8);
+            background: rgba(11, 19, 38, 0.9);
             display: none;
             justify-content: center;
             align-items: center;
@@ -108,10 +125,10 @@
             background: #fffdf9;
             color: #333;
             width: 85%;
-            padding: 35px 20px;
+            padding: 30px 20px;
             border-radius: 24px;
             text-align: center;
-            border: 4px solid #e6b422;
+            border: 4px solid #ff9900;
             box-shadow: 0 10px 35px rgba(0,0,0,0.6);
             transform: scale(0.5);
             transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -119,23 +136,42 @@
         .fortune-title {
             font-size: 3.2rem;
             font-weight: bold;
-            color: #d93333;
-            margin-bottom: 15px;
+            color: #ff3300;
+            margin-bottom: 12px;
             letter-spacing: 2px;
         }
         .fortune-comment {
-            font-size: 1.1rem;
-            line-height: 1.6;
-            color: #444;
-            margin-bottom: 30px;
+            font-size: 1.05rem;
+            line-height: 1.5;
+            color: #222;
+            margin-bottom: 15px;
             font-weight: bold;
-            background: #fdf5e6;
-            padding: 18px 12px;
+            background: #fff4e6;
+            padding: 14px 12px;
             border-radius: 14px;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
         }
+        
+        /* ★新設：ふくろう版ラッキーアイテム用スタイリング（ちょうちんカラー） */
+        .lucky-item-box {
+            background: linear-gradient(135deg, #fffaf0, #ffebcd);
+            border: 2px dashed #ff9900;
+            padding: 12px;
+            border-radius: 14px;
+            margin-bottom: 25px;
+            font-weight: bold;
+            color: #333;
+            font-size: 1.05rem;
+        }
+        .lucky-item-name {
+            color: #e65c00;
+            font-size: 1.25rem;
+            display: block;
+            margin-top: 4px;
+            text-shadow: 1px 1px 0px #fff;
+        }
+
         .restart-btn {
-            background: linear-gradient(135deg, #e6b422, #b8860b);
+            background: linear-gradient(135deg, #ff9900, #ff5500);
             color: #fff;
             border: none;
             padding: 15px 45px;
@@ -143,7 +179,7 @@
             font-weight: bold;
             border-radius: 30px;
             cursor: pointer;
-            box-shadow: 0 5px 15px rgba(230,180,34,0.3);
+            box-shadow: 0 5px 15px rgba(255,153,0,0.3);
         }
     </style>
 </head>
@@ -151,6 +187,10 @@
 
 <div id="game-container">
     <div id="tap-zone"></div>
+
+    <div id="character-layer">
+        <img src="avatar_test.png" id="char-fukurou" alt="ふくろう">
+    </div>
 
     <div id="gauge-wrapper">
         <div class="gauge-fill" id="gauge-fill"></div>
@@ -160,8 +200,14 @@
 
     <div id="result-modal">
         <div class="modal-content" id="modal-content">
-            <div class="fortune-title" id="fortune-title">大吉!!</div>
+            <div class="fortune-title" id="fortune-title">超大吉🏮</div>
             <div class="fortune-comment" id="fortune-comment">コメント</div>
+            
+            <div class="lucky-item-box">
+                🏮 今宵のラッキーメニュー 🏮
+                <span class="lucky-item-name" id="lucky-item-name">焼き餃子</span>
+            </div>
+
             <button class="restart-btn" onclick="resetGame()">もう一度占う</button>
         </div>
     </div>
@@ -176,21 +222,34 @@
     const modalContent = document.getElementById('modal-content');
     const fortuneTitle = document.getElementById('fortune-title');
     const fortuneComment = document.getElementById('fortune-comment');
+    const luckyItemName = document.getElementById('lucky-item-name'); // ★追加
 
     let power = 0;
     let isFinished = false;
 
+    // もともとのふくろう版おみくじ結果テキスト（元のまま維持しています）
     const fortunes = [
-        { title: "超大吉🎉", comment: "運気MAX！今日食べる『焼き餃子』と『肉豆腐』は、間違いなく人生で一番美味しいと感じるでしょう！" },
-        { title: "大吉🌟", comment: "熱々の『焼き餃子』をタレにつけるその瞬間、探していた最高のアイデアがパッと閃く予感！" },
-        { title: "大吉🌟", comment: "『串カツ』に特製ソースがたっぷり絡むように、素晴らしいご縁が次々とあなたに絡みついてきます！" },
-        { title: "吉✨", comment: "『肉豆腐』の出汁がじっくり染み渡るように、あなたの優しさが周囲の人の心にしみわたる素晴らしい一日。" },
-        { title: "吉✨", comment: "『焼き餃子』を近くの人に1個シェアしてみて。それだけで対人運が今の2倍に跳ね上がります！" },
-        { title: "中吉👍", comment: "今日なら『串カツ』のサクサクの衣を一口もこぼさずに食べられる、驚異の集中力が備わっています。" },
-        { title: "中吉👍", comment: "『肉豆腐』のスープを一口飲むごとに、今週溜まった疲れがじわ〜っと癒されて消えていくでしょう。" },
-        { title: "小吉😊", comment: "目の前の『焼き餃子』の焼き目が完璧な黄金色だったら、このあと小さくて嬉しいラッキーが起こります！" },
-        { title: "小吉😊", comment: "『串カツ』の注文タイミングが神がかる予感。揚げたてアツアツの一番旨い瞬間を逃すな！" },
-        { title: "末吉🍀", comment: "『肉豆腐』のネギをよーく見てみて！もしかしたらハート型に見えるネギが紛れ込んでいるかも…？" }
+        { title: "超大吉🏮", comment: "最高にツイてる夜！今夜は思いっきり笑って過ごすと、さらに運気が爆発します！" },
+        { title: "大吉🌟", comment: "笑顔がこぼれる素敵な時間になりそう。大切な人と会話が弾んで絆が深まる予感！" },
+        { title: "大吉🌟", comment: "素晴らしい引きの強さを持っています。気になっていたことに挑戦するなら今日がベスト！" },
+        { title: "吉✨", comment: "心がホッとする嬉しい出来事がありそう。いつも通りの選択が大きなハッピーに繋がります。" },
+        { title: "吉✨", comment: "お腹も心も満たされる大満足なひとときに。日頃の疲れが綺麗に吹き飛んでいきます！" },
+        { title: "中吉🎉", comment: "楽しいおしゃべりが最大のパワーの源！周りの人と楽しい時間を共有してみて。" },
+        { title: "中吉🎉", comment: "直感が冴え渡る時。ふと思いついたアイデアや、食べたいと思ったものが大正解！" },
+        { title: "小吉👍", comment: "ちょっとした美味しいご褒美が吉。自分のペースを大切にすると、充実した時間になります。" },
+        { title: "末吉🍀", comment: "周りをゆっくり見渡してみて。あなたのすぐ近くに、小さくて心ほっこりするラッキーが隠れています。" }
+    ];
+
+    // ★新設：ふくろう版・ランダムで選ばれるラッキーアイテムのリスト
+    const luckyItems = [
+        "焼き餃子 🥟",
+        "肉豆腐 🪵",
+        "みそ串カツ 🍢",
+        "スパイス玉子 🥚",
+        "こぼれ麻婆豆腐 🌶️",
+        "生レバーのジュワッと焼き 🥩",
+        "ウズラ串 🍢",
+        "海鮮プチぜいたく盛り 🐟"
     ];
 
     // 連打タップイベント
@@ -198,14 +257,11 @@
         if (isFinished) return;
         e.preventDefault();
 
-        // 画面全体（フクロウ・筒）をガタガタ揺らす
         gameContainer.classList.add('shake-active');
 
-        // 1回タップで11%プラス（約9〜10回で100% MAX）
         power += 11;
         if (power > 100) power = 100;
         
-        // ゲージを右へ伸びていく
         gaugeFill.style.width = power + '%';
 
         if (power >= 100) {
@@ -213,18 +269,22 @@
         }
     });
 
-    // 指を離したら揺れをストップ
     tapZone.addEventListener('pointerup', () => gameContainer.classList.remove('shake-active'));
     tapZone.addEventListener('pointerleave', () => gameContainer.classList.remove('shake-active'));
 
-    // 煙ドロン演出
+    // 結果表示
     function triggerSmokeAndResult() {
         isFinished = true;
         gameContainer.classList.remove('shake-active');
 
+        // 運勢のランダム決定
         const result = fortunes[Math.floor(Math.random() * fortunes.length)];
         fortuneTitle.innerText = result.title;
         fortuneComment.innerText = result.comment;
+
+        // ★ラッキーアイテムをリストから完全ランダムで1つ決定して表示
+        const randomItem = luckyItems[Math.floor(Math.random() * luckyItems.length)];
+        luckyItemName.innerText = randomItem;
 
         smokeEffect.classList.add('smoke-burst');
 
