@@ -3,132 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>3D飲食店ルーレット</title>
+    <title>プレミアム・メニュー御神籤</title>
     <style>
         body {
             margin: 0;
             padding: 0;
-            background: radial-gradient(circle, #2c3e50, #0f171e);
+            background: radial-gradient(circle at center, #3a225d, #120924); /* ポップラグジュアリーな紫背景 */
             font-family: 'Helvetica Neue', Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
             height: 100vh;
             overflow: hidden;
             touch-action: none;
         }
-        #ui-container {
-            position: absolute;
-            top: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        #header-ui {
+            margin-top: 30px;
+            text-align: center;
             z-index: 10;
-            width: 100%;
-            pointer-events: none;
+            width: 90%;
+        }
+        #title-box {
+            font-size: 14px;
+            color: #ff7da9;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
         }
         #result-display {
-            font-size: 26px;
+            font-size: 22px;
             font-weight: bold;
             color: #fff;
-            background: rgba(231, 76, 60, 0.9);
-            padding: 12px 30px;
-            border-radius: 50px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-            text-align: center;
-            min-width: 200px;
-            border: 2px solid #f1c40f;
+            background: linear-gradient(135deg, #ff4b72, #ff7da9);
+            padding: 12px 25px;
+            border-radius: 30px;
+            box-shadow: 0 8px 25px rgba(255, 75, 114, 0.4);
+            border: 2px solid #fff;
+            display: inline-block;
+            transition: all 0.3s ease;
         }
         #canvas-container {
             width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
+            flex-grow: 1;
+            position: relative;
             z-index: 1;
+        }
+        /* 豪華なメニューポップアップ演出 */
+        #menu-card-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            width: 280px;
+            background: linear-gradient(135deg, #1f1235, #3a225d);
+            border: 4px solid #f1c40f; /* ゴールド枠 */
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 30px #f1c40f;
+            z-index: 100;
+            text-align: center;
+            padding: 25px;
+            color: #fff;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+        }
+        #menu-card-overlay.show {
+            transform: translate(-50%, -50%) scale(1);
+            pointer-events: auto;
+        }
+        #menu-card-title {
+            font-size: 14px;
+            color: #f1c40f;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        #menu-card-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+        #close-btn {
+            background: #f1c40f;
+            color: #120924;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            pointer-events: auto;
         }
         .arrow {
             position: absolute;
-            top: 15%;
+            top: 40px;
             left: 50%;
             transform: translateX(-50%);
             width: 0;
             height: 0;
-            border-left: 20px solid transparent;
-            border-right: 20px solid transparent;
-            border-top: 40px solid #e74c3c;
-            filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.5));
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 30px solid #f1c40f;
+            filter: drop-shadow(0px 4px 10px rgba(241,196,15,0.6));
             z-index: 5;
-            pointer-events: none;
         }
-        .hint {
-            position: absolute;
-            bottom: 30px;
-            color: rgba(255,255,255,0.7);
-            font-size: 14px;
-            background: rgba(0,0,0,0.4);
+        #footer-ui {
+            margin-bottom: 30px;
+            color: rgba(255,255,255,0.6);
+            font-size: 13px;
+            background: rgba(0,0,0,0.3);
             padding: 8px 20px;
             border-radius: 20px;
-            pointer-events: none;
             z-index: 10;
+            pointer-events: none;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-    <div id="ui-container">
-        <div id="result-display">画面をスワイプして回してね！</div>
+    <div id="header-ui">
+        <div id="title-box">Chef's Recommendation</div>
+        <div id="result-display">画面をスワイプして抽選！</div>
     </div>
     
-    <div class="arrow"></div>
-    <div id="canvas-container"></div>
-    <div class="hint">ルーレットをドラッグ（スワイプ）して回してね！</div>
+    <div id="canvas-container">
+        <div class="arrow"></div>
+        <div id="menu-card-overlay">
+            <div id="menu-card-title">✨ 本日のおすすめ決定 ✨</div>
+            <div id="menu-card-name" id="menu-item-text">特製ローストビーフ</div>
+            <button id="close-btn" onclick="closeOverlay()">もう一度回す</button>
+        </div>
+    </div>
+    
+    <div id="footer-ui">ルーレットを左右にスワイプしてね</div>
 
 <script>
-// --- 景品の設定（8等分） ---
-const prizes = [
-    "ポテト無料券 🍟",
-    "ハズレ（もう一回） 😢",
-    "ドリンク1杯無料 🍹",
-    "ハズレ（もう一回） 😢",
-    "トッピング無料 🥚",
-    "ハズレ（もう一回） 😢",
-    "デザート半額 🍨",
-    "ハズレ（もう一回） 😢"
+// --- 飲食店おすすめメニュー8種類の設定 ---
+const menuItems = [
+    "極上黒毛和牛ステーキ 🥩",
+    "濃厚ウニのパスタ 🍝",
+    "大将厳選おまかせ握り 🍣",
+    "窯焼きマルゲリータ 🍕",
+    "特製 鯛茶漬け御膳 🐟",
+    "総料理長特製マサラカレー 🍛",
+    "贅沢フレンチトースト 🍞",
+    "本日のシェフ気まぐれサラダ 🥗"
 ];
-const colors = [0xe74c3c, 0x34495e, 0x2ecc71, 0x34495e, 0xf1c40f, 0x34495e, 0x9b59b6, 0x34495e];
 
-// --- Three.js 基本設定 ---
+// ポップ＆ラグジュアリーなパステル＆ネオンカラー8色
+const colors = [0xff4b72, 0x3498db, 0x2ecc71, 0xf1c40f, 0x9b59b6, 0xe67e22, 0x1abc9c, 0xff7da9];
+
+// --- Three.js セットアップ ---
 const container = document.getElementById('canvas-container');
 const scene = new THREE.Scene();
 
-// カメラの設定（立体感が出る遠近カメラ）
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 6, 8); // 斜め上から見下ろすアングル
+// 縦長スマホ画面に合わせたカメラアングル
+const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+camera.position.set(0, 5.5, 5.5); 
 camera.lookAt(0, 0, 0);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setSize(container.clientWidth, container.clientHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.shadowMap.enabled = true; 
+renderer.shadowMap.enabled = true;
 container.appendChild(renderer.domElement);
 
-// --- 照明（ライティング） ---
+// --- 華やかなライティング ---
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
 scene.add(ambientLight);
 
-const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-dirLight.position.set(5, 10, 7);
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+dirLight.position.set(5, 10, 5);
 dirLight.castShadow = true;
 scene.add(dirLight);
 
-// --- 3Dルーレット盤の作成 ---
-const rouletteGroup = new THREE.Group(); 
+// ネオンの照り返し風のスポットライト
+const spotLight = new THREE.SpotLight(0xff7da9, 1.5);
+spotLight.position.set(-5, 5, 5);
+scene.add(spotLight);
 
-const wheelRadius = 3;
-const wheelThickness = 0.4;
+// --- 3Dルーレット盤の生成 ---
+const rouletteGroup = new THREE.Group();
+const wheelRadius = 2.4;
+const wheelThickness = 0.35;
 const segments = 8;
 
 for (let i = 0; i < segments; i++) {
@@ -138,43 +197,84 @@ for (let i = 0; i < segments; i++) {
     const geometry = new THREE.CylinderGeometry(wheelRadius, wheelRadius, wheelThickness, 32, 1, false, thetaStart, thetaLength);
     const material = new THREE.MeshStandardMaterial({
         color: colors[i],
-        roughness: 0.4,
-        metalness: 0.3
+        roughness: 0.2,
+        metalness: 0.5
     });
     const wedge = new THREE.Mesh(geometry, material);
-    wedge.receiveShadow = true;
     wedge.castShadow = true;
+    wedge.receiveShadow = true;
     rouletteGroup.add(wedge);
 }
 
-// センターのピン（軸）
-const pinGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.6, 16);
-const pinMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.8, roughness: 0.2 }); 
-const pin = new THREE.Mesh(pinGeo, pinMat);
-pin.position.y = 0.1;
-rouletteGroup.add(pin);
+// センターキャップ
+const capGeo = new THREE.CylinderGeometry(0.25, 0.25, 0.5, 16);
+const capMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.9, roughness: 0.1 });
+const cap = new THREE.Mesh(capGeo, capMat);
+cap.position.y = 0.05;
+rouletteGroup.add(cap);
 
-rouletteGroup.rotation.x = 0.4; 
+rouletteGroup.rotation.x = 0.4; // スマホ画面で見やすいように手前に傾ける
 scene.add(rouletteGroup);
 
-// --- 回転の物理挙動ロジック ---
+// --- リアルな「球（ボール）」の作成 ---
+const ballRadius = 0.12;
+const ballGeo = new THREE.SphereGeometry(ballRadius, 32, 32);
+const ballMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.9, roughness: 0.1 }); // 真珠のような輝き
+const ballMesh = new THREE.Mesh(ballGeo, ballMat);
+ballMesh.castShadow = true;
+scene.add(ballMesh);
+
+// --- 豪華演出用：紙吹雪（パーティクル）の作成 ---
+const particleCount = 120;
+const particleGeometry = new THREE.BufferGeometry();
+const particlePositions = new Float32Array(particleCount * 3);
+const particleVelocities = [];
+
+for (let i = 0; i < particleCount; i++) {
+    particlePositions[i * 3] = (Math.random() - 0.5) * 5;
+    particlePositions[i * 3 + 1] = Math.random() * 5 + 2;
+    particlePositions[i * 3 + 2] = (Math.random() - 0.5) * 5;
+    
+    particleVelocities.push({
+        x: (Math.random() - 0.5) * 0.05,
+        y: -Math.random() * 0.05 - 0.02,
+        z: (Math.random() - 0.5) * 0.05
+    });
+}
+particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+const particleMaterial = new THREE.PointsMaterial({
+    color: 0xf1c40f, // ゴールドの紙吹雪
+    size: 0.15,
+    transparent: true,
+    opacity: 0
+});
+const particleSystem = new THREE.Points(particleGeometry, particleMaterial);
+scene.add(particleSystem);
+
+// --- アニメーション＆物理変数 ---
 let isDragging = false;
 let previousMouseX = 0;
 let rotationSpeed = 0;
-const friction = 0.985; 
-let isSpinning = false;
+const friction = 0.988;
+let gameState = "READY"; // READY, SPINNING, BALL_DROP, WIN
+let ballAngle = 0;
+let ballSpeed = 0;
+let ballOrbitRadius = wheelRadius - 0.3;
+let targetPrizeIndex = 0;
 
-// マウス・タッチイベントの統合対応
-window.addEventListener('mousedown', (e) => { startDrag(e.clientX); });
-window.addEventListener('mousemove', (e) => { doDrag(e.clientX); });
-window.addEventListener('mouseup', () => { endDrag(); });
+// 初期状態の球の位置
+updateBallPosition();
 
-window.addEventListener('touchstart', (e) => { if(e.touches.length > 0) startDrag(e.touches[0].clientX); }, { passive: true });
-window.addEventListener('touchmove', (e) => { if(e.touches.length > 0) doDrag(e.touches[0].clientX); }, { passive: true });
-window.addEventListener('touchend', () => { endDrag(); });
+// イベントリスナー
+window.addEventListener('mousedown', (e) => startDrag(e.clientX));
+window.addEventListener('mousemove', (e) => doDrag(e.clientX));
+window.addEventListener('mouseup', endDrag);
+window.addEventListener('touchstart', (e) => { if(e.touches.length>0) startDrag(e.touches[0].clientX) }, {passive:true});
+window.addEventListener('touchmove', (e) => { if(e.touches.length>0) doDrag(e.touches[0].clientX) }, {passive:true});
+window.addEventListener('touchend', endDrag);
 
 function startDrag(x) {
-    if (isSpinning) return;
+    if (gameState !== "READY") return;
     isDragging = true;
     previousMouseX = x;
 }
@@ -182,56 +282,138 @@ function startDrag(x) {
 function doDrag(x) {
     if (!isDragging) return;
     const deltaX = x - previousMouseX;
-    rouletteGroup.rotation.y += deltaX * 0.01;
-    rotationSpeed = deltaX * 0.04; // 離した時の勢い
+    rouletteGroup.rotation.y += deltaX * 0.012;
+    rotationSpeed = deltaX * 0.05;
     previousMouseX = x;
+    updateBallPosition();
 }
 
 function endDrag() {
     if (!isDragging) return;
     isDragging = false;
-    if (Math.abs(rotationSpeed) > 0.02) {
-        isSpinning = true;
-        document.getElementById('result-display').innerText = "まわるまわる...🌀";
+    if (Math.abs(rotationSpeed) > 0.03) {
+        gameState = "SPINNING";
+        ballSpeed = -rotationSpeed * 1.2; // 球は逆方向に回る（本物の物理）
+        document.getElementById('result-display').innerText = "品定め中...🍽️";
     }
 }
 
-// 当たり判定
-function checkResult() {
-    let angle = rouletteGroup.rotation.y % (Math.PI * 2);
-    if (angle < 0) angle += Math.PI * 2;
-    
-    const segmentAngle = (Math.PI * 2) / segments;
-    let prizeIndex = Math.floor(((Math.PI * 2 - angle) + segmentAngle / 2) / segmentAngle) % segments;
-    
-    document.getElementById('result-display').innerText = `結果：${prizes[prizeIndex]}`;
+function updateBallPosition() {
+    if (gameState === "READY" || gameState === "SPINNING") {
+        // ルーレットの傾き(0.4)を考慮して球の位置を計算
+        const cos = Math.cos(ballAngle) * ballOrbitRadius;
+        const sin = Math.sin(ballAngle) * ballOrbitRadius;
+        ballMesh.position.set(cos, 0.15, sin);
+        ballMesh.position.applyAxisAngle(new THREE.Vector3(1, 0, 0), 0.4);
+    }
 }
 
-// --- メインループ ---
+function triggerWin(prizeIndex) {
+    gameState = "WIN";
+    document.getElementById('result-display').innerText = "決定！大アタリ！";
+    
+    // 豪華ポップアップの表示とテキスト書き換え
+    document.getElementById('menu-card-name').innerText = menuItems[prizeIndex];
+    document.getElementById('menu-card-overlay').classList.add('show');
+    
+    // 紙吹雪を有効化
+    particleMaterial.opacity = 1;
+}
+
+function closeOverlay() {
+    document.getElementById('menu-card-overlay').classList.remove('show');
+    document.getElementById('result-display').innerText = "画面をスワイプして抽選！";
+    particleMaterial.opacity = 0;
+    // 紙吹雪の位置リセット
+    const positions = particleSystem.geometry.attributes.position.array;
+    for(let i=0; i<particleCount; i++) {
+        positions[i*3+1] = Math.random() * 5 + 2;
+    }
+    particleSystem.geometry.attributes.position.needsUpdate = true;
+    gameState = "READY";
+}
+
+// --- メインループ（描写更新） ---
 function animate() {
     requestAnimationFrame(animate);
 
-    if (isSpinning) {
+    if (gameState === "SPINNING") {
+        // 盤面の回転
         rouletteGroup.rotation.y += rotationSpeed;
-        rotationSpeed *= friction; 
+        rotationSpeed *= friction;
 
-        if (Math.abs(rotationSpeed) < 0.001) {
-            rotationSpeed = 0;
-            isSpinning = false;
-            checkResult();
+        // 球の回転（逆方向）
+        ballAngle += ballSpeed;
+        ballSpeed *= 0.99; // 球も徐々に減速
+        ballOrbitRadius -= 0.004; // 外枠から徐々に内側に落ちていく演出
+
+        updateBallPosition();
+
+        // 両方が十分に減速したら、出目を固定して吸い込まれる演出へ
+        if (Math.abs(rotationSpeed) < 0.005 && Math.abs(ballSpeed) < 0.01) {
+            gameState = "BALL_DROP";
+            
+            // 現在の角度から当選位置（8マスのどれか）を算出
+            let currentWheelAngle = rouletteGroup.rotation.y % (Math.PI * 2);
+            if (currentWheelAngle < 0) currentWheelAngle += Math.PI * 2;
+            
+            const segmentAngle = (Math.PI * 2) / segments;
+            targetPrizeIndex = Math.floor(((Math.PI * 2 - currentWheelAngle) + segmentAngle / 2) / segmentAngle) % segments;
+            
+            // 球をその当選マスの中心へピタッと落とすためのターゲット角度
+            ballAngle = (Math.PI * 2) - (targetPrizeIndex * segmentAngle) - currentWheelAngle;
+            ballOrbitRadius = wheelRadius - 0.6; // マスの中心の半径
+        }
+    } 
+    else if (gameState === "BALL_DROP") {
+        // 球がターゲットマスにシュッと吸い込まれるリアルな演出
+        const targetCos = Math.cos(ballAngle) * ballOrbitRadius;
+        const targetSin = Math.sin(ballAngle) * ballOrbitRadius;
+        
+        const targetPos = new THREE.Vector3(targetCos, 0.15, targetSin);
+        targetPos.applyAxisAngle(new THREE.Vector3(1, 0, 0), 0.4);
+        
+        ballMesh.position.lerp(targetPos, 0.2); // スムーズに吸着
+        
+        // 完全に吸着したら勝利演出へ
+        if (ballMesh.position.distanceTo(targetPos) < 0.02) {
+            triggerWin(targetPrizeIndex);
         }
     }
+    else if (gameState === "WIN") {
+        // 当選後、ルーレットをゆっくり余韻で回す
+        rouletteGroup.rotation.y += 0.002;
+        // 球も一緒に固定されて回る
+        let currentWheelAngle = rouletteGroup.rotation.y % (Math.PI * 2);
+        const segmentAngle = (Math.PI * 2) / segments;
+        ballAngle = (Math.PI * 2) - (targetPrizeIndex * segmentAngle) - currentWheelAngle;
+        ballOrbitRadius = wheelRadius - 0.6;
+        updateBallPosition();
 
-    // エラー箇所を修正（.camera から camera へ）
+        // 金色の紙吹雪（パーティクル）をヒラヒラと降らせる
+        const positions = particleSystem.geometry.attributes.position.array;
+        for (let i = 0; i < particleCount; i++) {
+            positions[i * 3] += particleVelocities[i].x;
+            positions[i * 3 + 1] += particleVelocities[i].y; // 落下
+            positions[i * 3 + 2] += particleVelocities[i].z;
+
+            // 地面まで落ちたら上に戻す
+            if (positions[i * 3 + 1] < -2) {
+                positions[i * 3 + 1] = 4;
+            }
+        }
+        particleSystem.geometry.attributes.position.needsUpdate = true;
+    }
+
     renderer.render(scene, camera);
 }
 animate();
 
-// レスポンシブ対応
+// レスポンシブ（スマホの縦横切り替え）対応
 window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    camera.aspect = container.clientWidth / container.clientHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
 });
 </script>
 </body>
