@@ -46,6 +46,7 @@
             position: absolute;
             top: 0;
             left: 0;
+            z-index: 1;
         }
         .arrow {
             position: absolute;
@@ -83,7 +84,7 @@
     
     <div class="arrow"></div>
     <div id="canvas-container"></div>
-    <div class="hint">ルーレットを指でお好みの方向にスワイプ！</div>
+    <div class="hint">ルーレットをドラッグ（スワイプ）して回してね！</div>
 
 <script>
 // --- 景品の設定（8等分） ---
@@ -111,11 +112,11 @@ camera.lookAt(0, 0, 0);
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.shadowMap.enabled = true; // 影を有効化してリアルに
+renderer.shadowMap.enabled = true; 
 container.appendChild(renderer.domElement);
 
-// --- 照明（ライティング）でリアルさを演出 ---
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+// --- 照明（ライティング） ---
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
 scene.add(ambientLight);
 
 const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -124,24 +125,21 @@ dirLight.castShadow = true;
 scene.add(dirLight);
 
 // --- 3Dルーレット盤の作成 ---
-const rouletteGroup = new THREE.Group(); // 回転させるためのグループ
+const rouletteGroup = new THREE.Group(); 
 
-// 盤面の土台（厚みのある円柱）
 const wheelRadius = 3;
 const wheelThickness = 0.4;
 const segments = 8;
 
 for (let i = 0; i < segments; i++) {
-    // 扇形の3D形状を作成
     const thetaStart = (i * Math.PI * 2) / segments;
     const thetaLength = (Math.PI * 2) / segments;
     
     const geometry = new THREE.CylinderGeometry(wheelRadius, wheelRadius, wheelThickness, 32, 1, false, thetaStart, thetaLength);
-    // リアルな質感を出すマテリアル（金属光沢風）
     const material = new THREE.MeshStandardMaterial({
         color: colors[i],
-        roughness: 0.3,
-        metalness: 0.2
+        roughness: 0.4,
+        metalness: 0.3
     });
     const wedge = new THREE.Mesh(geometry, material);
     wedge.receiveShadow = true;
@@ -151,79 +149,72 @@ for (let i = 0; i < segments; i++) {
 
 // センターのピン（軸）
 const pinGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.6, 16);
-const pinMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.8, roughness: 0.2 }); // 金色
+const pinMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.8, roughness: 0.2 }); 
 const pin = new THREE.Mesh(pinGeo, pinMat);
 pin.position.y = 0.1;
 rouletteGroup.add(pin);
 
-// ルーレットを少し手前に傾けて見やすくする
 rouletteGroup.rotation.x = 0.4; 
 scene.add(rouletteGroup);
 
 // --- 回転の物理挙動ロジック ---
 let isDragging = false;
-let previousMousePosition = { x: 0 };
+let previousMouseX = 0;
 let rotationSpeed = 0;
-const friction = 0.985; // 減速の度合い（1に近づくほど長く回る）
+const friction = 0.985; 
 let isSpinning = false;
 
-// マウス・タッチイベントの登録
+// マウス・タッチイベントの統合対応
 window.addEventListener('mousedown', (e) => { startDrag(e.clientX); });
 window.addEventListener('mousemove', (e) => { doDrag(e.clientX); });
 window.addEventListener('mouseup', () => { endDrag(); });
 
-window.addEventListener('touchstart', (e) => { startDrag(e.touches[0].clientX); });
-window.addEventListener('touchmove', (e) => { doDrag(e.touches[0].clientX); });
+window.addEventListener('touchstart', (e) => { if(e.touches.length > 0) startDrag(e.touches[0].clientX); }, { passive: true });
+window.addEventListener('touchmove', (e) => { if(e.touches.length > 0) doDrag(e.touches[0].clientX); }, { passive: true });
 window.addEventListener('touchend', () => { endDrag(); });
 
 function startDrag(x) {
     if (isSpinning) return;
     isDragging = true;
-    previousMousePosition.x = x;
+    previousMouseX = x;
 }
 
 function doDrag(x) {
     if (!isDragging) return;
-    const deltaX = x - previousMousePosition.x;
-    // スワイプの動きに合わせてルーレットのY軸（3D空間上の上方向）を回す
+    const deltaX = x - previousMouseX;
     rouletteGroup.rotation.y += deltaX * 0.01;
-    rotationSpeed = deltaX * 0.05; // 離した時の勢い
-    previousMousePosition.x = x;
+    rotationSpeed = deltaX * 0.04; // 離した時の勢い
+    previousMouseX = x;
 }
 
 function endDrag() {
     if (!isDragging) return;
     isDragging = false;
-    if (Math.abs(rotationSpeed) > 0.05) {
+    if (Math.abs(rotationSpeed) > 0.02) {
         isSpinning = true;
         document.getElementById('result-display').innerText = "まわるまわる...🌀";
     }
 }
 
-// どこのセグメントが矢印（真上）に止まったかを計算する関数
+// 当たり判定
 function checkResult() {
-    // 3Dの回転角を0〜2πの範囲に丸める
     let angle = rouletteGroup.rotation.y % (Math.PI * 2);
     if (angle < 0) angle += Math.PI * 2;
     
-    // 真正面（上の矢印）の基準位置に合わせるための補正
     const segmentAngle = (Math.PI * 2) / segments;
-    // 矢印は上（Z軸の手前側）にあるため、角度のオフセットを調整
     let prizeIndex = Math.floor(((Math.PI * 2 - angle) + segmentAngle / 2) / segmentAngle) % segments;
     
     document.getElementById('result-display').innerText = `結果：${prizes[prizeIndex]}`;
 }
 
-// --- メインループ（描画の更新） ---
+// --- メインループ ---
 function animate() {
     requestAnimationFrame(animate);
 
-    // 勢いよく回っている時の処理
     if (isSpinning) {
         rouletteGroup.rotation.y += rotationSpeed;
-        rotationSpeed *= friction; // 摩擦で徐々に減速
+        rotationSpeed *= friction; 
 
-        // 一定の遅さになったらストップ
         if (Math.abs(rotationSpeed) < 0.001) {
             rotationSpeed = 0;
             isSpinning = false;
@@ -231,11 +222,12 @@ function animate() {
         }
     }
 
-    renderer.render(scene, .camera);
+    // エラー箇所を修正（.camera から camera へ）
+    renderer.render(scene, camera);
 }
 animate();
 
-// 画面サイズが変更された時のレスポンシブ対応
+// レスポンシブ対応
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
