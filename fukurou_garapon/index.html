@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>リアル・デジタルガラポン（8色版）</title>
+    <title>3D飲食店ルーレット</title>
     <style>
         body {
             margin: 0;
             padding: 0;
-            background: #f0f0f0;
+            background: radial-gradient(circle, #2c3e50, #0f171e);
             font-family: 'Helvetica Neue', Arial, sans-serif;
             display: flex;
             flex-direction: column;
@@ -18,213 +18,229 @@
             overflow: hidden;
             touch-action: none;
         }
-        #wrapper {
+        #ui-container {
+            position: absolute;
+            top: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            z-index: 10;
             width: 100%;
-            max-width: 400px;
+            pointer-events: none;
         }
         #result-display {
-            margin-bottom: 20px;
-            font-size: 24px;
+            font-size: 26px;
             font-weight: bold;
-            color: #333;
-            min-height: 40px;
+            color: #fff;
+            background: rgba(231, 76, 60, 0.9);
+            padding: 12px 30px;
+            border-radius: 50px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
             text-align: center;
-            background: rgba(255,255,255,0.8);
-            padding: 10px 20px;
-            border-radius: 30px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            width: 80%;
+            min-width: 200px;
+            border: 2px solid #f1c40f;
         }
         #canvas-container {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 1;
-            background: #fff;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-        canvas {
             width: 100%;
             height: 100%;
-            display: block;
-        }
-        .instruction {
             position: absolute;
-            bottom: 15px;
-            width: 100%;
-            text-align: center;
-            color: #888;
-            font-size: 14px;
+            top: 0;
+            left: 0;
+        }
+        .arrow {
+            position: absolute;
+            top: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 40px solid #e74c3c;
+            filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.5));
+            z-index: 5;
             pointer-events: none;
-            font-weight: 500;
+        }
+        .hint {
+            position: absolute;
+            bottom: 30px;
+            color: rgba(255,255,255,0.7);
+            font-size: 14px;
+            background: rgba(0,0,0,0.4);
+            padding: 8px 20px;
+            border-radius: 20px;
+            pointer-events: none;
+            z-index: 10;
         }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-    <div id="wrapper">
-        <div id="result-display">ガラポンを回してね！</div>
-        
-        <div id="canvas-container">
-            <div class="instruction">指でドラムをスワイプして回してね</div>
-        </div>
+    <div id="ui-container">
+        <div id="result-display">画面をスワイプして回してね！</div>
     </div>
+    
+    <div class="arrow"></div>
+    <div id="canvas-container"></div>
+    <div class="hint">ルーレットを指でお好みの方向にスワイプ！</div>
 
 <script>
-// --- 基本設定 ---
-const { Engine, Render, Runner, Bodies, Composite, Constraint, Mouse, MouseConstraint, Events, Body } = Matter;
-
-const container = document.getElementById('canvas-container');
-const width = 400;
-const height = 400;
-
-// 物理エンジンとレンダラーの生成
-const engine = Engine.create({ gravity: { y: 1.5 } }); 
-const render = Render.create({
-    element: container,
-    engine: engine,
-    options: {
-        width: width,
-        height: height,
-        wireframes: false, 
-        background: 'transparent'
-    }
-});
-
-// --- ガラポン（六角形ドラム）の作成 ---
-const centerX = width / 2;
-const centerY = height / 2 - 20;
-const radius = 120; 
-
-const drumParts = [];
-const sides = 6;
-const wallThickness = 10;
-const sideLength = radius * Math.tan(Math.PI / sides) * 2;
-
-for (let i = 0; i < sides; i++) {
-    const angle = (i * 2 * Math.PI) / sides;
-    const x = centerX + radius * Math.cos(angle);
-    const y = centerY + radius * Math.sin(angle);
-    
-    // 隙間（出口）を作る
-    let currentLength = sideLength;
-    if (i === 5) currentLength = sideLength * 0.6; 
-
-    const wall = Bodies.rectangle(x, y, wallThickness, currentLength, {
-        angle: angle + Math.PI / 2,
-        render: { fillStyle: '#d4af37' }, 
-        friction: 0.1
-    });
-    drumParts.push(wall);
-}
-
-const drum = Body.create({
-    parts: drumParts,
-    isStatic: false
-});
-
-// ドラムの中心点に固定する軸
-const conversionConstraint = Constraint.create({
-    pointA: { x: centerX, y: centerY },
-    bodyB: drum,
-    pointB: { x: 0, y: 0 },
-    stiffness: 1,
-    length: 0,
-    render: { visible: true, strokeStyle: '#7a5a13' }
-});
-
-// --- 厳選された8色の玉を作成 ---
-// カラーコードを完全に固定し、判定ロジックと一致させます
-const ballColors = [
-    '#ffffff', // 1. 白
-    '#ff4b4b', // 2. 赤
-    '#4b77ff', // 3. 青
-    '#4bff4b', // 4. 緑
-    '#ffff4b', // 5. 黄
-    '#ff7da9', // 6. ピンク
-    '#a84bff', // 7. 紫
-    '#ff994b'  // 8. オレンジ
+// --- 景品の設定（8等分） ---
+const prizes = [
+    "ポテト無料券 🍟",
+    "ハズレ（もう一回） 😢",
+    "ドリンク1杯無料 🍹",
+    "ハズレ（もう一回） 😢",
+    "トッピング無料 🥚",
+    "ハズレ（もう一回） 😢",
+    "デザート半額 🍨",
+    "ハズレ（もう一回） 😢"
 ];
+const colors = [0xe74c3c, 0x34495e, 0x2ecc71, 0x34495e, 0xf1c40f, 0x34495e, 0x9b59b6, 0x34495e];
 
-const balls = [];
-// 各色3個ずつ、計24個の玉を投入
-ballColors.forEach(color => {
-    for(let k = 0; k < 3; k++) {
-        const ball = Bodies.circle(
-            centerX + (Math.random() - 0.5) * 40, 
-            centerY + (Math.random() - 0.5) * 40, 
-            10, 
-            {
-                restitution: 0.5, 
-                friction: 0.05,
-                render: { fillStyle: color, strokeStyle: '#333', lineWidth: 1 }
-            }
-        );
-        balls.push(ball);
-    }
-});
+// --- Three.js 基本設定 ---
+const container = document.getElementById('canvas-container');
+const scene = new THREE.Scene();
 
-// --- 外側の受け皿（出た玉を受け止める） ---
-const catcher = Bodies.fromVertices(centerX + 60, centerY + 150, [
-    { x: 0, y: 0 }, { x: 80, y: 20 }, { x: 70, y: 40 }, { x: -10, y: 10 }
-], { isStatic: true, render: { fillStyle: '#8b4513' } });
+// カメラの設定（立体感が出る遠近カメラ）
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(0, 6, 8); // 斜め上から見下ろすアングル
+camera.lookAt(0, 0, 0);
 
-Composite.add(engine.world, [drum, conversionConstraint, ...balls, catcher]);
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true; // 影を有効化してリアルに
+container.appendChild(renderer.domElement);
 
-// --- 操作設定 ---
-const mouse = Mouse.create(render.canvas);
-const mouseConstraint = MouseConstraint.create(engine, {
-    mouse: mouse,
-    constraint: {
-        stiffness: 0.2,
-        render: { visible: false }
-    }
-});
-Composite.add(engine.world, mouseConstraint);
-render.mouse = mouse;
+// --- 照明（ライティング）でリアルさを演出 ---
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+scene.add(ambientLight);
 
-// --- 当たり判定 ---
-let hasWon = false;
-Events.on(engine, 'afterUpdate', () => {
-    balls.forEach(ball => {
-        // 出口を通過して受け皿に触れるエリアに入ったか判定
-        if (!hasWon && ball.position.y > centerY + 110 && ball.position.x > centerX) {
-            hasWon = true;
-            displayResult(ball.render.fillStyle);
-            
-            // 4秒後に自動リセットして文字を戻す
-            setTimeout(() => {
-                hasWon = false;
-                document.getElementById('result-display').innerText = "ガラポンを回してね！";
-            }, 4000);
-        }
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight.position.set(5, 10, 7);
+dirLight.castShadow = true;
+scene.add(dirLight);
+
+// --- 3Dルーレット盤の作成 ---
+const rouletteGroup = new THREE.Group(); // 回転させるためのグループ
+
+// 盤面の土台（厚みのある円柱）
+const wheelRadius = 3;
+const wheelThickness = 0.4;
+const segments = 8;
+
+for (let i = 0; i < segments; i++) {
+    // 扇形の3D形状を作成
+    const thetaStart = (i * Math.PI * 2) / segments;
+    const thetaLength = (Math.PI * 2) / segments;
+    
+    const geometry = new THREE.CylinderGeometry(wheelRadius, wheelRadius, wheelThickness, 32, 1, false, thetaStart, thetaLength);
+    // リアルな質感を出すマテリアル（金属光沢風）
+    const material = new THREE.MeshStandardMaterial({
+        color: colors[i],
+        roughness: 0.3,
+        metalness: 0.2
     });
-});
+    const wedge = new THREE.Mesh(geometry, material);
+    wedge.receiveShadow = true;
+    wedge.castShadow = true;
+    rouletteGroup.add(wedge);
+}
 
-// --- 8種類の結果出力（ここを社内用に自由に変更してください） ---
-function displayResult(color) {
-    const resultText = document.getElementById('result-display');
-    switch(color) {
-        case '#ffffff': resultText.innerText = "⚪ 白：いつも通りの平和な一日"; break;
-        case '#ff4b4b': resultText.innerText = "🔴 赤：情熱UP！アイデアが冴え渡る日"; break;
-        case '#4b77ff': resultText.innerText = "🔵 青：冷静沈着！トラブルを回避できる日"; break;
-        case '#4bff4b': resultText.innerText = "🟢 緑：健康運UP！リフレッシュが吉"; break;
-        case '#ffff4b': resultText.innerText = "🟡 黄：金運・キャッチアップ運が最高"; break;
-        case '#ff7da9': resultText.innerText = "🌸 ピンク：対人運UP！チームワーク抜群"; break;
-        case '#a84bff': resultText.innerText = "🔮 紫：インスピレーションが湧き出る日"; break;
-        case '#ff994b': resultText.innerText = "🟠 橙：リーダーシップを発揮できる日"; break;
-        default: resultText.innerText = "🎉 ラッキーアイテム発見！";
+// センターのピン（軸）
+const pinGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.6, 16);
+const pinMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.8, roughness: 0.2 }); // 金色
+const pin = new THREE.Mesh(pinGeo, pinMat);
+pin.position.y = 0.1;
+rouletteGroup.add(pin);
+
+// ルーレットを少し手前に傾けて見やすくする
+rouletteGroup.rotation.x = 0.4; 
+scene.add(rouletteGroup);
+
+// --- 回転の物理挙動ロジック ---
+let isDragging = false;
+let previousMousePosition = { x: 0 };
+let rotationSpeed = 0;
+const friction = 0.985; // 減速の度合い（1に近づくほど長く回る）
+let isSpinning = false;
+
+// マウス・タッチイベントの登録
+window.addEventListener('mousedown', (e) => { startDrag(e.clientX); });
+window.addEventListener('mousemove', (e) => { doDrag(e.clientX); });
+window.addEventListener('mouseup', () => { endDrag(); });
+
+window.addEventListener('touchstart', (e) => { startDrag(e.touches[0].clientX); });
+window.addEventListener('touchmove', (e) => { doDrag(e.touches[0].clientX); });
+window.addEventListener('touchend', () => { endDrag(); });
+
+function startDrag(x) {
+    if (isSpinning) return;
+    isDragging = true;
+    previousMousePosition.x = x;
+}
+
+function doDrag(x) {
+    if (!isDragging) return;
+    const deltaX = x - previousMousePosition.x;
+    // スワイプの動きに合わせてルーレットのY軸（3D空間上の上方向）を回す
+    rouletteGroup.rotation.y += deltaX * 0.01;
+    rotationSpeed = deltaX * 0.05; // 離した時の勢い
+    previousMousePosition.x = x;
+}
+
+function endDrag() {
+    if (!isDragging) return;
+    isDragging = false;
+    if (Math.abs(rotationSpeed) > 0.05) {
+        isSpinning = true;
+        document.getElementById('result-display').innerText = "まわるまわる...🌀";
     }
 }
 
-// 物理エンジンの実行
-Render.run(render);
-const runner = Runner.create();
-Runner.run(runner, engine);
+// どこのセグメントが矢印（真上）に止まったかを計算する関数
+function checkResult() {
+    // 3Dの回転角を0〜2πの範囲に丸める
+    let angle = rouletteGroup.rotation.y % (Math.PI * 2);
+    if (angle < 0) angle += Math.PI * 2;
+    
+    // 真正面（上の矢印）の基準位置に合わせるための補正
+    const segmentAngle = (Math.PI * 2) / segments;
+    // 矢印は上（Z軸の手前側）にあるため、角度のオフセットを調整
+    let prizeIndex = Math.floor(((Math.PI * 2 - angle) + segmentAngle / 2) / segmentAngle) % segments;
+    
+    document.getElementById('result-display').innerText = `結果：${prizes[prizeIndex]}`;
+}
+
+// --- メインループ（描画の更新） ---
+function animate() {
+    requestAnimationFrame(animate);
+
+    // 勢いよく回っている時の処理
+    if (isSpinning) {
+        rouletteGroup.rotation.y += rotationSpeed;
+        rotationSpeed *= friction; // 摩擦で徐々に減速
+
+        // 一定の遅さになったらストップ
+        if (Math.abs(rotationSpeed) < 0.001) {
+            rotationSpeed = 0;
+            isSpinning = false;
+            checkResult();
+        }
+    }
+
+    renderer.render(scene, .camera);
+}
+animate();
+
+// 画面サイズが変更された時のレスポンシブ対応
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
 </script>
 </body>
 </html>
