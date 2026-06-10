@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>リアル・デジタルガラポン（8色版）</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f0f0f0;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+        }
+        #wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 400px;
+        }
+        #result-display {
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            min-height: 40px;
+            text-align: center;
+            background: rgba(255,255,255,0.8);
+            padding: 10px 20px;
+            border-radius: 30px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            width: 80%;
+        }
+        #canvas-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .instruction {
+            position: absolute;
+            bottom: 15px;
+            width: 100%;
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+            pointer-events: none;
+            font-weight: 500;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+</head>
+<body>
+
+    <div id="wrapper">
+        <div id="result-display">ガラポンを回してね！</div>
+        
+        <div id="canvas-container">
+            <div class="instruction">指でドラムをスワイプして回してね</div>
+        </div>
+    </div>
+
+<script>
+// --- 基本設定 ---
+const { Engine, Render, Runner, Bodies, Composite, Constraint, Mouse, MouseConstraint, Events, Body } = Matter;
+
+const container = document.getElementById('canvas-container');
+const width = 400;
+const height = 400;
+
+// 物理エンジンとレンダラーの生成
+const engine = Engine.create({ gravity: { y: 1.5 } }); 
+const render = Render.create({
+    element: container,
+    engine: engine,
+    options: {
+        width: width,
+        height: height,
+        wireframes: false, 
+        background: 'transparent'
+    }
+});
+
+// --- ガラポン（六角形ドラム）の作成 ---
+const centerX = width / 2;
+const centerY = height / 2 - 20;
+const radius = 120; 
+
+const drumParts = [];
+const sides = 6;
+const wallThickness = 10;
+const sideLength = radius * Math.tan(Math.PI / sides) * 2;
+
+for (let i = 0; i < sides; i++) {
+    const angle = (i * 2 * Math.PI) / sides;
+    const x = centerX + radius * Math.cos(angle);
+    const y = centerY + radius * Math.sin(angle);
+    
+    // 隙間（出口）を作る
+    let currentLength = sideLength;
+    if (i === 5) currentLength = sideLength * 0.6; 
+
+    const wall = Bodies.rectangle(x, y, wallThickness, currentLength, {
+        angle: angle + Math.PI / 2,
+        render: { fillStyle: '#d4af37' }, 
+        friction: 0.1
+    });
+    drumParts.push(wall);
+}
+
+const drum = Body.create({
+    parts: drumParts,
+    isStatic: false
+});
+
+// ドラムの中心点に固定する軸
+const conversionConstraint = Constraint.create({
+    pointA: { x: centerX, y: centerY },
+    bodyB: drum,
+    pointB: { x: 0, y: 0 },
+    stiffness: 1,
+    length: 0,
+    render: { visible: true, strokeStyle: '#7a5a13' }
+});
+
+// --- 厳選された8色の玉を作成 ---
+// カラーコードを完全に固定し、判定ロジックと一致させます
+const ballColors = [
+    '#ffffff', // 1. 白
+    '#ff4b4b', // 2. 赤
+    '#4b77ff', // 3. 青
+    '#4bff4b', // 4. 緑
+    '#ffff4b', // 5. 黄
+    '#ff7da9', // 6. ピンク
+    '#a84bff', // 7. 紫
+    '#ff994b'  // 8. オレンジ
+];
+
+const balls = [];
+// 各色3個ずつ、計24個の玉を投入
+ballColors.forEach(color => {
+    for(let k = 0; k < 3; k++) {
+        const ball = Bodies.circle(
+            centerX + (Math.random() - 0.5) * 40, 
+            centerY + (Math.random() - 0.5) * 40, 
+            10, 
+            {
+                restitution: 0.5, 
+                friction: 0.05,
+                render: { fillStyle: color, strokeStyle: '#333', lineWidth: 1 }
+            }
+        );
+        balls.push(ball);
+    }
+});
+
+// --- 外側の受け皿（出た玉を受け止める） ---
+const catcher = Bodies.fromVertices(centerX + 60, centerY + 150, [
+    { x: 0, y: 0 }, { x: 80, y: 20 }, { x: 70, y: 40 }, { x: -10, y: 10 }
+], { isStatic: true, render: { fillStyle: '#8b4513' } });
+
+Composite.add(engine.world, [drum, conversionConstraint, ...balls, catcher]);
+
+// --- 操作設定 ---
+const mouse = Mouse.create(render.canvas);
+const mouseConstraint = MouseConstraint.create(engine, {
+    mouse: mouse,
+    constraint: {
+        stiffness: 0.2,
+        render: { visible: false }
+    }
+});
+Composite.add(engine.world, mouseConstraint);
+render.mouse = mouse;
+
+// --- 当たり判定 ---
+let hasWon = false;
+Events.on(engine, 'afterUpdate', () => {
+    balls.forEach(ball => {
+        // 出口を通過して受け皿に触れるエリアに入ったか判定
+        if (!hasWon && ball.position.y > centerY + 110 && ball.position.x > centerX) {
+            hasWon = true;
+            displayResult(ball.render.fillStyle);
+            
+            // 4秒後に自動リセットして文字を戻す
+            setTimeout(() => {
+                hasWon = false;
+                document.getElementById('result-display').innerText = "ガラポンを回してね！";
+            }, 4000);
+        }
+    });
+});
+
+// --- 8種類の結果出力（ここを社内用に自由に変更してください） ---
+function displayResult(color) {
+    const resultText = document.getElementById('result-display');
+    switch(color) {
+        case '#ffffff': resultText.innerText = "⚪ 白：いつも通りの平和な一日"; break;
+        case '#ff4b4b': resultText.innerText = "🔴 赤：情熱UP！アイデアが冴え渡る日"; break;
+        case '#4b77ff': resultText.innerText = "🔵 青：冷静沈着！トラブルを回避できる日"; break;
+        case '#4bff4b': resultText.innerText = "🟢 緑：健康運UP！リフレッシュが吉"; break;
+        case '#ffff4b': resultText.innerText = "🟡 黄：金運・キャッチアップ運が最高"; break;
+        case '#ff7da9': resultText.innerText = "🌸 ピンク：対人運UP！チームワーク抜群"; break;
+        case '#a84bff': resultText.innerText = "🔮 紫：インスピレーションが湧き出る日"; break;
+        case '#ff994b': resultText.innerText = "🟠 橙：リーダーシップを発揮できる日"; break;
+        default: resultText.innerText = "🎉 ラッキーアイテム発見！";
+    }
+}
+
+// 物理エンジンの実行
+Render.run(render);
+const runner = Runner.create();
+Runner.run(runner, engine);
+</script>
+</body>
+</html>
