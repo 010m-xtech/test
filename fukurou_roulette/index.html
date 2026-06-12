@@ -66,7 +66,7 @@
       transition: box-shadow 0.05s ease, border-color 0.05s ease;
     }
 
-    /* フクロウのサイズ（2倍維持） */
+    /* フクロウのサイズ（2倍：172px） */
     #owl-character {
       position: absolute;
       width: 172px;
@@ -175,7 +175,7 @@
       transform: translate(-50%, -50%) scale(1) rotate(0deg);
     }
 
-    /* 写真サイズ（大きめ維持） */
+    /* 大きめ写真サイズ */
     #result-img { max-width: 90%; max-height: 170px; object-fit: contain; border: 3px solid #b58920; margin-bottom: 10px; display: none; }
     #result-text { color: #e5b83b; font-size: 17px; font-weight: bold; white-space: nowrap; margin-bottom: 6px; }
     #result-comment { color: #f0e2c3; font-size: 12px; font-family: sans-serif; text-align: center; line-height: 1.4; max-width: 90%; }
@@ -226,6 +226,7 @@
   </div>
 
   <script>
+    // ルーレット盤面の公式数字配列
     const rouletteNumbers = [
       0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10,
       5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26
@@ -258,7 +259,7 @@
       { color: "#f69445", led: "#ff5500" }, 
       { color: "#f6ede2", led: "#ffaa00" }, 
       { color: "#2372b7", led: "#00aeff", isDark: true }, 
-      { color: "#bd242a", led: "#ff0044", isDark: true }, 
+      { color: "#bd242a", fill: "#ff0044", led: "#ff0044", isDark: true }, 
       { color: "#f39800", led: "#ffb700" }, 
       { color: "#009944", led: "#00ff66", isDark: true }, 
       { color: "#fbe134", led: "#ffee00" }, 
@@ -310,10 +311,8 @@
         const x2 = cx + r * Math.cos(rad2);
         const y2 = cy + r * Math.sin(rad2);
 
-        // 【バグ修正】背景の「マス」を描画
         svgContent += `<path d="M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2} Z" fill="${config.color}" stroke="rgba(54,31,14,0.35)" stroke-width="1" />`;
 
-        // 外周のLED装飾を描画
         const ledR = r - 8;
         const ledRad = (middleDeg * Math.PI) / 180;
         const ledX = cx + ledR * Math.cos(ledRad);
@@ -324,13 +323,11 @@
           <circle cx="${ledX}" cy="${ledY}" r="1.8" fill="#ffffff" />
         `;
 
-        // 【バグ修復】マスの数字（小さな丸バッジと数字テキスト）を描画
         const badgeR = r - 26;
         const bX = cx + badgeR * Math.cos(ledRad);
         const bY = cy + badgeR * Math.sin(ledRad);
         svgContent += `<circle cx="${bX}" cy="${bY}" r="11" fill="#111111" stroke="${config.led}" stroke-width="1.5" /><text x="${bX}" y="${bY}" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle" dominant-baseline="central" font-family="sans-serif">${num}</text>`;
 
-        // メニュー名の縦書き文字列を描画
         const menuName = getShortMenuName(menus[getMenuIndexFromNumber(num)]);
         const textColor = config.isDark ? "#ffffff" : "#111111";
         
@@ -376,7 +373,7 @@
 
     let isRunning = false;
     let audioCtx = null;
-    let accumulatedBoardAngle = 0; // 前回止まった盤面の角度を蓄積する変数
+    let baseAngle = 0; // 盤面の現在の角度を保持する変数
 
     function initAudio() {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -436,12 +433,14 @@
       isRunning = true;
       guideText.style.display = 'none';
       resultBanner.classList.remove('show'); 
+      
+      // 球と影を表示
       ball.style.display = 'block';
       shadow.style.display = 'block';
 
       owlCharacter.classList.add('owl-shaking');
 
-      // 【完全ランダム化】0〜36のインデックスから毎回ランダムに当選マスを選択
+      // 【1】完全にランダムな「当選マスのインデックス(0〜36)」を毎回新しく決定
       const luckyIndex = Math.floor(Math.random() * rouletteNumbers.length);
       const chosenNumber = rouletteNumbers[luckyIndex];
       const targetMenuIndex = getMenuIndexFromNumber(chosenNumber);
@@ -449,108 +448,66 @@
       playTaiko();
 
       let startTime = null;
-      const duration = 5000; // 5秒間でドラマチックに減速
+      const duration = 5000; // 5秒の気持ちいい減速回転
       let lastSoundAngle = 0;
 
-      // 前回の停止位置（accumulatedBoardAngle）から出発し、
-      // 最低3回転（-1080度）以上回りつつ、狙った luckyIndex のマスが「真上（基準位置）」にピタッと止まるための目標最終角度を正確に計算
-      const targetPocketAngle = -(luckyIndex * sliceAngle);
-      const baseRotation = -1080; 
-      
-      // 現在の累積角度から、次の目標角度への差分を求めて加算
-      let currentNormalized = accumulatedBoardAngle % 360;
-      if (currentNormalized > 0) currentNormalized -= 360;
-      let angleShift = targetPocketAngle - currentNormalized;
-      if (angleShift > 0) angleShift -= 360;
-      
-      const finalBoardAngle = accumulatedBoardAngle + baseRotation + angleShift;
+      // 【2】選ばれたランダムなマスが「真上（フクロウの目の前）」にぴったり止まるための最終角度を計算
+      // 5回転（1800度）以上回した上で、そのマスの位置に正確にピタッと合わせる
+      const targetAngle = (luckyIndex * sliceAngle);
+      const totalRotation = 1800 + targetAngle; 
+      const finalAngle = baseAngle - totalRotation; // 反時計回りに回転
+
+      // 球は盤面の特定のマス（当選マス）の内側ポケットに最初から固定されて一緒に回る
+      const endRadius = 106;
+      const finalRad = (targetAngle - 90) * Math.PI / 180;
+      const targetX = Math.cos(finalRad) * endRadius;
+      const targetY = Math.sin(finalRad) * endRadius;
 
       function animateCasino(timestamp) {
         if (!startTime) startTime = timestamp;
         const elapsed = timestamp - startTime;
         const progress = Math.min(elapsed / duration, 1);
         
-        // 物理的な滑らかさを生む5乗イージング
+        // 滑らかな減速を生み出すイージング（5乗）
         const easeOut = 1 - Math.pow(1 - progress, 5);
 
-        // 盤面を反時計回りにリアルに減速回転
-        const currentBoardAngle = accumulatedBoardAngle + (finalBoardAngle - accumulatedBoardAngle) * easeOut;
-        boardContainer.style.transform = `rotate(${currentBoardAngle}deg)`;
+        // 盤面を回転させる
+        const currentAngle = baseAngle + (finalAngle - baseAngle) * easeOut;
+        boardContainer.style.transform = `rotate(${currentAngle}deg)`;
 
-        // 球は逆方向（時計回り）に4回転（1440度）しながら真上に向かって減速収束するカジノシミュレーション
-        const ballSpins = 1440;
-        const currentBallAngle = ballSpins * (1 - easeOut);
+        // 球と影を盤面と一緒に回転（一体化）
+        ball.style.transform = `translate(calc(-50% + ${targetX}px), calc(-50% + ${targetY}px))`;
+        shadow.style.transform = `translate(calc(-50% + ${targetX}px + 1px), calc(-50% + ${targetY}px + 1.5px))`;
 
-        // ボールが外周から徐々に内側のポケットへ落ちる軌道の計算
-        let startRadius = 142;
-        let endRadius = 106;
-        let currentRadius = startRadius - ((startRadius - endRadius) * Math.pow(progress, 3));
-
-        // ポケット手前でのリアルなガタツキ物理演出
-        if (progress > 0.85) {
-          const gravityIntensity = (progress - 0.85) * 10; 
-          const gravityRad = (currentBallAngle - 90) * Math.PI / 180;
-          currentRadius += Math.sin(gravityRad) * gravityIntensity;
-        }
-
-        // 盤面回転と球の回転を合成して最終的な表示座標を算出
-        const finalRelativeAngle = currentBoardAngle + currentBallAngle;
-        const ballRad = (finalRelativeAngle - 90) * Math.PI / 180;
-        let x = Math.cos(ballRad) * currentRadius;
-        let y = Math.sin(ballRad) * currentRadius;
-
-        // マスの爪（仕切り）を乗り越えるときのピョンピョン跳ねるエフェクト
-        let jumpOffset = 0;
-        let shadowScale = 1;
-        if (progress > 0.65 && progress < 0.98) {
-          const angleModulo = (finalRelativeAngle % sliceAngle + sliceAngle) % sliceAngle;
-          if (angleModulo < sliceAngle * 0.2 || angleModulo > sliceAngle * 0.8) {
-            const jumpProgress = angleModulo < sliceAngle * 0.2 ? (sliceAngle * 0.2 - angleModulo) / (sliceAngle * 0.2) : (angleModulo - sliceAngle * 0.8) / (sliceAngle * 0.2);
-            jumpOffset = Math.sin(jumpProgress * Math.PI) * 4 * (1 - progress); 
-            shadowScale = 1 - (jumpOffset * 0.05); 
+        // 回転の速度に合わせてカタカタ音を鳴らす
+        let currentVisualAngle = currentAngle;
+        let angleDiff = currentVisualAngle - lastSoundAngle;
+        if (progress < 0.8) {
+          if (Math.abs(angleDiff) >= 15) { 
+            playBallRoll(350 + (progress * 200), 0.05, 0.02, progress > 0.6); 
+            lastSoundAngle = currentVisualAngle; 
           }
-        }
-
-        ball.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px - ${jumpOffset}px))`;
-        shadow.style.transform = `translate(calc(-50% + ${x}px + 1px), calc(-50% + ${y}px + 2.5px)) scale(${shadowScale})`;
-
-        // 速度に応じたコロコロ音の再生制御
-        let angleDiff = finalRelativeAngle - lastSoundAngle;
-        let isFinalPhase = progress > 0.8;
-        if (progress < 0.4) {
-          if (Math.abs(angleDiff) >= 10) { playBallRoll(380, 0.04, 0.02, false); lastSoundAngle = finalRelativeAngle; }
-        } else if (progress < 0.7) {
-          if (Math.abs(angleDiff) >= 15) { playBallRoll(580, 0.08, 0.02, false); lastSoundAngle = finalRelativeAngle; }
-        } else if (progress < 0.93) {
-          if (Math.abs(angleDiff) >= 20) { playBallRoll(240, 0.15, 0.04, isFinalPhase); lastSoundAngle = finalRelativeAngle; }
         }
 
         if (progress < 1) {
           requestAnimationFrame(animateCasino);
         } else {
-          // 球がポケットに入りきった瞬間のLEDネオンフラッシュ
+          // ぴったり止まった瞬間のフラッシュ演出
           gameContainer.classList.add('neon-flash');
           rouletteWrapper.classList.add('frame-flash');
           playPocketIn();
           
-          // 次回プレイのために、今回停止した最終的な盤面角度を保存（これにより毎回異なる位置からスタート可能に）
-          accumulatedBoardAngle = finalBoardAngle;
+          // 次回プレイのために、現在の角度を保存（連続プレイ対応）
+          baseAngle = finalAngle;
 
-          // 【ご要望通りのタメ】球が止まってから結果バナーが出るまでたっぷり「1150ms（1秒以上）」待たせる
+          // 【3】球が止まってからメニューが表示されるまでの時間をたっぷり「1150ms（1秒追加）」待たせる余韻演出
           setTimeout(() => {
             gameContainer.classList.remove('neon-flash');
             rouletteWrapper.classList.remove('frame-flash');
             
             owlCharacter.classList.remove('owl-shaking');
-
-            // 球と影を、当選マスの真芯（真上基準）に完全に吸着静止させる
-            const finalRad = (accumulatedBoardAngle - 90) * Math.PI / 180;
-            const finalX = Math.cos(finalRad) * endRadius;
-            const finalY = Math.sin(finalRad) * endRadius;
-            ball.style.transform = `translate(calc(-50% + ${finalX}px), calc(-50% + ${finalY}px))`;
-            shadow.style.transform = `translate(calc(-50% + ${finalX}px + 1px), calc(-50% + ${finalY}px + 1.5px)) scale(1)`;
             
-            // 実際に止まったマスのメニューデータをポップアップに正確に反映
+            // 実際に止まったマスのメニューデータをポップアップに100%正確に反映
             resultImg.src = menuImages[targetMenuIndex];
             resultImg.style.display = 'block';
             resultText.innerText = `天が選びし一品：${menus[targetMenuIndex]}`;
