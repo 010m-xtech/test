@@ -66,7 +66,7 @@
       transition: box-shadow 0.05s ease, border-color 0.05s ease;
     }
 
-    /* 【修正】フクロウのサイズを2倍(172px)にし、位置を微調整 */
+    /* フクロウのサイズ（2倍維持） */
     #owl-character {
       position: absolute;
       width: 172px;
@@ -162,7 +162,7 @@
 
     #result-banner {
       position: absolute;
-      width: 370px; height: 310px; top: 50%; left: 50%;
+      width: 370px; height: 320px; top: 50%; left: 50%;
       transform: translate(-50%, -50%) scale(0.7) rotate(-3deg);
       background: rgba(18, 10, 4, 0.98);
       border: 2px solid #b58920;
@@ -175,7 +175,7 @@
       transform: translate(-50%, -50%) scale(1) rotate(0deg);
     }
 
-    /* 【修正】写真を今より少し大きく表示（max-heightを150px→170pxに変更） */
+    /* 写真サイズ（大きめ維持） */
     #result-img { max-width: 90%; max-height: 170px; object-fit: contain; border: 3px solid #b58920; margin-bottom: 10px; display: none; }
     #result-text { color: #e5b83b; font-size: 17px; font-weight: bold; white-space: nowrap; margin-bottom: 6px; }
     #result-comment { color: #f0e2c3; font-size: 12px; font-family: sans-serif; text-align: center; line-height: 1.4; max-width: 90%; }
@@ -258,7 +258,7 @@
       { color: "#f69445", led: "#ff5500" }, 
       { color: "#f6ede2", led: "#ffaa00" }, 
       { color: "#2372b7", led: "#00aeff", isDark: true }, 
-      { color: "#bd242a", fill: "#ff0044", led: "#ff0044", isDark: true }, 
+      { color: "#bd242a", led: "#ff0044", isDark: true }, 
       { color: "#f39800", led: "#ffb700" }, 
       { color: "#009944", led: "#00ff66", isDark: true }, 
       { color: "#fbe134", led: "#ffee00" }, 
@@ -310,8 +310,10 @@
         const x2 = cx + r * Math.cos(rad2);
         const y2 = cy + r * Math.sin(rad2);
 
+        // 【バグ修正】背景の「マス」を描画
         svgContent += `<path d="M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2} Z" fill="${config.color}" stroke="rgba(54,31,14,0.35)" stroke-width="1" />`;
 
+        // 外周のLED装飾を描画
         const ledR = r - 8;
         const ledRad = (middleDeg * Math.PI) / 180;
         const ledX = cx + ledR * Math.cos(ledRad);
@@ -322,11 +324,13 @@
           <circle cx="${ledX}" cy="${ledY}" r="1.8" fill="#ffffff" />
         `;
 
+        // 【バグ修復】マスの数字（小さな丸バッジと数字テキスト）を描画
         const badgeR = r - 26;
         const bX = cx + badgeR * Math.cos(ledRad);
         const bY = cy + badgeR * Math.sin(ledRad);
         svgContent += `<circle cx="${bX}" cy="${bY}" r="11" fill="#111111" stroke="${config.led}" stroke-width="1.5" /><text x="${bX}" y="${bY}" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle" dominant-baseline="central" font-family="sans-serif">${num}</text>`;
 
+        // メニュー名の縦書き文字列を描画
         const menuName = getShortMenuName(menus[getMenuIndexFromNumber(num)]);
         const textColor = config.isDark ? "#ffffff" : "#111111";
         
@@ -349,7 +353,6 @@
           textLinesHtml += `<text x="${xOffset}" y="${yOffset}" transform="rotate(${rotateOffset})" fill="${textColor}" font-size="11.5" font-weight="900" text-anchor="middle" dominant-baseline="central" font-family="serif">${char}</text>`;
         });
 
-        svgContent += `<path d="M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2} Z" fill="${config.color}" stroke="rgba(54,31,14,0.35)" stroke-width="1" />`;
         svgContent += `<g transform="translate(${tX}, ${tY}) rotate(${textAngle})">${textLinesHtml}</g>`;
       });
 
@@ -373,6 +376,7 @@
 
     let isRunning = false;
     let audioCtx = null;
+    let accumulatedBoardAngle = 0; // 前回止まった盤面の角度を蓄積する変数
 
     function initAudio() {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -437,7 +441,7 @@
 
       owlCharacter.classList.add('owl-shaking');
 
-      // 【修正】毎回確実に完全ランダムなターゲット（0〜36マス目）を決定
+      // 【完全ランダム化】0〜36のインデックスから毎回ランダムに当選マスを選択
       const luckyIndex = Math.floor(Math.random() * rouletteNumbers.length);
       const chosenNumber = rouletteNumbers[luckyIndex];
       const targetMenuIndex = getMenuIndexFromNumber(chosenNumber);
@@ -445,46 +449,57 @@
       playTaiko();
 
       let startTime = null;
-      const duration = 5000; // 回転演出時間は体感が気持ち良い5秒に設定
+      const duration = 5000; // 5秒間でドラマチックに減速
       let lastSoundAngle = 0;
+
+      // 前回の停止位置（accumulatedBoardAngle）から出発し、
+      // 最低3回転（-1080度）以上回りつつ、狙った luckyIndex のマスが「真上（基準位置）」にピタッと止まるための目標最終角度を正確に計算
+      const targetPocketAngle = -(luckyIndex * sliceAngle);
+      const baseRotation = -1080; 
+      
+      // 現在の累積角度から、次の目標角度への差分を求めて加算
+      let currentNormalized = accumulatedBoardAngle % 360;
+      if (currentNormalized > 0) currentNormalized -= 360;
+      let angleShift = targetPocketAngle - currentNormalized;
+      if (angleShift > 0) angleShift -= 360;
+      
+      const finalBoardAngle = accumulatedBoardAngle + baseRotation + angleShift;
 
       function animateCasino(timestamp) {
         if (!startTime) startTime = timestamp;
         const elapsed = timestamp - startTime;
         const progress = Math.min(elapsed / duration, 1);
         
-        // 滑らかな減速イージング（5乗）
+        // 物理的な滑らかさを生む5乗イージング
         const easeOut = 1 - Math.pow(1 - progress, 5);
 
-        // 【数式変更】盤面と球の回転速度を完全同期させ、止まる位置が毎回100%ランダムに分散するロジック
-        // 盤面は反時計回りに3回転半＋当選マスの角度分だけ回転
-        const boardTargetAngle = -1260 - (luckyIndex * sliceAngle);
-        const currentBoardAngle = boardTargetAngle * easeOut;
+        // 盤面を反時計回りにリアルに減速回転
+        const currentBoardAngle = accumulatedBoardAngle + (finalBoardAngle - accumulatedBoardAngle) * easeOut;
         boardContainer.style.transform = `rotate(${currentBoardAngle}deg)`;
 
-        // 球は時計回りに4回転しながら、最終的に真上（0度）で綺麗にマスの中心に止まる軌道
-        const ballTargetAngle = 1440;
-        const currentBallAngle = ballTargetAngle * (1 - easeOut);
+        // 球は逆方向（時計回り）に4回転（1440度）しながら真上に向かって減速収束するカジノシミュレーション
+        const ballSpins = 1440;
+        const currentBallAngle = ballSpins * (1 - easeOut);
 
-        // 球が外側からポケット（内側）へ落ちる半径のシミュレーション
+        // ボールが外周から徐々に内側のポケットへ落ちる軌道の計算
         let startRadius = 142;
         let endRadius = 106;
         let currentRadius = startRadius - ((startRadius - endRadius) * Math.pow(progress, 3));
 
-        // 終盤のポケットへの吸い込まれ（ガタツキ）演出
+        // ポケット手前でのリアルなガタツキ物理演出
         if (progress > 0.85) {
           const gravityIntensity = (progress - 0.85) * 10; 
           const gravityRad = (currentBallAngle - 90) * Math.PI / 180;
           currentRadius += Math.sin(gravityRad) * gravityIntensity;
         }
 
-        // 座標計算
+        // 盤面回転と球の回転を合成して最終的な表示座標を算出
         const finalRelativeAngle = currentBoardAngle + currentBallAngle;
         const ballRad = (finalRelativeAngle - 90) * Math.PI / 180;
         let x = Math.cos(ballRad) * currentRadius;
         let y = Math.sin(ballRad) * currentRadius;
 
-        // ポケットの爪の跳ね返り効果
+        // マスの爪（仕切り）を乗り越えるときのピョンピョン跳ねるエフェクト
         let jumpOffset = 0;
         let shadowScale = 1;
         if (progress > 0.65 && progress < 0.98) {
@@ -499,7 +514,7 @@
         ball.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px - ${jumpOffset}px))`;
         shadow.style.transform = `translate(calc(-50% + ${x}px + 1px), calc(-50% + ${y}px + 2.5px)) scale(${shadowScale})`;
 
-        // コロコロ効果音
+        // 速度に応じたコロコロ音の再生制御
         let angleDiff = finalRelativeAngle - lastSoundAngle;
         let isFinalPhase = progress > 0.8;
         if (progress < 0.4) {
@@ -513,26 +528,29 @@
         if (progress < 1) {
           requestAnimationFrame(animateCasino);
         } else {
-          // 球がポケットに入った瞬間のフラッシュ
+          // 球がポケットに入りきった瞬間のLEDネオンフラッシュ
           gameContainer.classList.add('neon-flash');
           rouletteWrapper.classList.add('frame-flash');
           playPocketIn();
           
-          // 【修正】球が止まった後、メニューが出るまでの時間を1秒長くする（150ms → 1150ms に変更）
+          // 次回プレイのために、今回停止した最終的な盤面角度を保存（これにより毎回異なる位置からスタート可能に）
+          accumulatedBoardAngle = finalBoardAngle;
+
+          // 【ご要望通りのタメ】球が止まってから結果バナーが出るまでたっぷり「1150ms（1秒以上）」待たせる
           setTimeout(() => {
             gameContainer.classList.remove('neon-flash');
             rouletteWrapper.classList.remove('frame-flash');
             
             owlCharacter.classList.remove('owl-shaking');
 
-            // 最終位置のピタ止め補正
-            const finalRad = (currentBoardAngle - 90) * Math.PI / 180;
+            // 球と影を、当選マスの真芯（真上基準）に完全に吸着静止させる
+            const finalRad = (accumulatedBoardAngle - 90) * Math.PI / 180;
             const finalX = Math.cos(finalRad) * endRadius;
             const finalY = Math.sin(finalRad) * endRadius;
             ball.style.transform = `translate(calc(-50% + ${finalX}px), calc(-50% + ${finalY}px))`;
             shadow.style.transform = `translate(calc(-50% + ${finalX}px + 1px), calc(-50% + ${finalY}px + 1.5px)) scale(1)`;
             
-            // 結果データの反映（止まったマスと100%一致）
+            // 実際に止まったマスのメニューデータをポップアップに正確に反映
             resultImg.src = menuImages[targetMenuIndex];
             resultImg.style.display = 'block';
             resultText.innerText = `天が選びし一品：${menus[targetMenuIndex]}`;
@@ -540,7 +558,7 @@
             
             resultBanner.classList.add('show');
             isRunning = false;
-          }, 1150); // 1.15秒の絶妙なタメを演出
+          }, 1150); 
         }
       }
       requestAnimationFrame(animateCasino);
