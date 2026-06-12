@@ -66,6 +66,27 @@
       transition: box-shadow 0.05s ease, border-color 0.05s ease;
     }
 
+    /* 【新設】フクロウの配置スタイル */
+    #owl-character {
+      position: absolute;
+      width: 86px;          /* ちょうどいいサイズ感に調整 */
+      height: auto;
+      top: -68px;          /* ルーレット盤の真上に乗る位置 */
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 50;         /* 盤面や球より手前に表示 */
+      pointer-events: none;
+    }
+
+    /* ルーレット回転中のフクロウの微振動アニメーション */
+    .owl-shaking {
+      animation: owl-wiggle 0.15s infinite alternate ease-in-out;
+    }
+    @keyframes owl-wiggle {
+      0% { transform: translateX(-50%) rotate(-2deg); }
+      100% { transform: translateX(-50%) rotate(2deg); }
+    }
+
     .neon-flash {
       background-color: #3a1505 !important;
     }
@@ -172,6 +193,9 @@
 
   <div id="game-container">
     <div id="roulette-wrapper">
+      
+      <img id="owl-character" src="owl_overlay2.png" alt="ふくろう">
+
       <svg id="roulette-board" viewBox="0 0 500 500" width="500" height="500">
         <defs>
           <filter id="neon-glow" x="-20%" y="-20%" width="140%" height="140%">
@@ -220,7 +244,7 @@
       "鮮度抜群！ごま油と塩の黄金コンビで召し上がれ。",
       "海の恵みを独り占め！プチだけど満足度はマックス！",
       "この歯ごたえ、この旨味…知る人ぞ知る極上の一皿。",
-      "当店名名物！迷ったらコレを叩き込むのが正解。"
+      "当店名物！迷ったらコレを叩き込むのが正解。"
     ];
 
     function getMenuIndexFromNumber(num) {
@@ -345,11 +369,10 @@
     const resultText = document.getElementById('result-text');
     const resultComment = document.getElementById('result-comment');
     const guideText = document.getElementById('guide-text');
+    const owlCharacter = document.getElementById('owl-character'); // フクロウを取得
 
     let isRunning = false;
     let audioCtx = null;
-    
-    // 【重要】過去の回転情報を完全にリセット・蓄積させないため、ベース角度を固定
     let currentBoardAngle = 0; 
 
     function initAudio() {
@@ -413,21 +436,21 @@
       ball.style.display = 'block';
       shadow.style.display = 'block';
 
-      // 1. 毎回完全にランダムなインデックス(0〜36)を決定
+      // 回転開始時にフクロウを小刻みに揺らすクラスを追加
+      owlCharacter.classList.add('owl-shaking');
+
       const luckyIndex = Math.floor(Math.random() * rouletteNumbers.length);
       const chosenNumber = rouletteNumbers[luckyIndex];
       const targetMenuIndex = getMenuIndexFromNumber(chosenNumber);
       
-      // 2. 選ばれたマスが「真上」に来るための基本角度
       const targetPocketAngle = -(luckyIndex * sliceAngle);
 
       playTaiko();
 
       let startTime = null;
-      const duration = 6500; // 演出時間
+      const duration = 6500; 
       let lastSoundAngle = 0;
 
-      // 盤面の総回転角度（3回転 + 目標のポケット位置）
       const finalBoardAngle = -1080 + targetPocketAngle; 
 
       function animateCasino(timestamp) {
@@ -435,24 +458,18 @@
         const elapsed = timestamp - startTime;
         const progress = Math.min(elapsed / duration, 1);
         
-        // 緩やかに減速するイージング式
         const easeOut = 1 - Math.pow(1 - progress, 5);
 
-        // 盤面を回転
         currentBoardAngle = finalBoardAngle * easeOut;
         boardContainer.style.transform = `rotate(${currentBoardAngle}deg)`;
 
-        // 【バグ修正箇所】球の軌道計算
-        // 前回の残像や盤面回転と衝突しないよう、独立した純粋な順回転(時計回り)を加算
-        const ballSpins = 2160; // 球の単体回転量
+        const ballSpins = 2160; 
         const currentBallAngle = (ballSpins * (1 - progress)) + (targetPocketAngle * progress);
 
-        // 外周から内周へ落ちる半径のシミュレーション
         let startRadius = 142;
         let endRadius = 106;
         let currentRadius = startRadius - ((startRadius - endRadius) * Math.pow(progress, 3));
 
-        // 終盤のガタツキ
         if (progress > 0.85) {
           const gravityIntensity = (progress - 0.85) * 12; 
           const gravityRad = (currentBallAngle - 90) * Math.PI / 180;
@@ -463,7 +480,6 @@
         let x = Math.cos(ballRad) * currentRadius;
         let y = Math.sin(ballRad) * currentRadius;
 
-        // ポケットの爪の跳ね返り
         let jumpOffset = 0;
         let shadowScale = 1;
         if (progress > 0.65 && progress < 0.98) {
@@ -479,7 +495,6 @@
         ball.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px - ${jumpOffset}px))`;
         shadow.style.transform = `translate(calc(-50% + ${x}px + 1px), calc(-50% + ${y}px + 2.5px)) scale(${shadowScale})`;
 
-        // 効果音の調整
         let angleDiff = currentBallAngle - lastSoundAngle;
         let isFinalPhase = progress > 0.8;
 
@@ -502,14 +517,15 @@
             gameContainer.classList.remove('neon-flash');
             rouletteWrapper.classList.remove('frame-flash');
             
-            // 最後に球をターゲットマスの中心にピタッと合わせる
+            // 停止したので、フクロウの振動を止める
+            owlCharacter.classList.remove('owl-shaking');
+
             const finalRad = (targetPocketAngle - 90) * Math.PI / 180;
             const finalX = Math.cos(finalRad) * endRadius;
             const finalY = Math.sin(finalRad) * endRadius;
             ball.style.transform = `translate(calc(-50% + ${finalX}px), calc(-50% + ${finalY}px))`;
             shadow.style.transform = `translate(calc(-50% + ${finalX}px + 1px), calc(-50% + ${finalY}px + 1.5px)) scale(1)`;
             
-            // 結果データの表示
             resultImg.src = menuImages[targetMenuIndex];
             resultImg.style.display = 'block';
             resultText.innerText = `天が選びし一品：${menus[targetMenuIndex]}`;
