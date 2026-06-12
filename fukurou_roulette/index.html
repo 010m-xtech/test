@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>晩御飯ルーレット（居酒屋イルミネーション・ネオン極振版）</title>
+  <style>
+    * { 
+      margin: 0; 
+      padding: 0; 
+      box-sizing: border-box; 
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+    
+    body { 
+      overflow: hidden; 
+      touch-action: none; 
+      background: #000000; 
+      font-family: "Hiragino Mincho ProN", "MS Mincho", serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      width: 100vw;
+      cursor: default !important;
+      transition: background-color 0.05s ease;
+    }
+
+    #game-container {
+      position: relative;
+      width: 100vw;
+      max-width: 390px;
+      height: 100vh;
+      max-height: 844px;
+      display: flex;
+      justify-content: center; 
+      align-items: center;
+      background-image: url('haikei.jpg'); 
+      background-size: cover;
+      background-position: center;
+      background-color: #1a120a !important; 
+      cursor: default !important;
+      pointer-events: auto !important; 
+      transition: background-color 0.05s ease;
+    }
+
+    #roulette-wrapper {
+      position: absolute;
+      width: 340px;
+      height: 340px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -53%); 
+      cursor: default !important;
+      border-radius: 50%;
+      border: 14px solid #221105;
+      box-shadow: 
+        0 0 15px #ff5500,
+        inset 0 0 25px rgba(0,0,0,0.95),
+        0 15px 40px rgba(0,0,0,0.9),
+        0 0 40px rgba(212, 170, 55, 0.3);
+      background: #110803;
+      transition: box-shadow 0.05s ease, border-color 0.05s ease;
+    }
+
+    .neon-flash {
+      background-color: #3a1505 !important;
+    }
+    .frame-flash {
+      border-color: #ff3300 !important;
+      box-shadow: 
+        0 0 40px #ff0055, 
+        0 0 70px #ffaa00,
+        inset 0 0 30px rgba(255,85,0,0.6),
+        0 15px 40px rgba(0,0,0,0.9) !important;
+    }
+
+    /* 盤面の配置スタイル */
+    #roulette-board {
+      position: absolute;
+      width: 312px;
+      height: 312px;
+      top: 0;
+      left: 0;
+      border-radius: 50%;
+      z-index: 5;
+      transform: rotate(0deg);
+      will-change: transform;
+    }
+
+    #center-pin {
+      position: absolute;
+      width: 54px;
+      height: 54px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle at 18px 18px, #fff3b3, #d4aa37 55%, #5e4811);
+      border: 5px solid #2b1708;
+      border-radius: 50%;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.7), inset 0 0 5px rgba(0,0,0,0.4);
+      z-index: 40;
+      pointer-events: none;
+    }
+    .pin-spoke {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 6px; height: 72px;
+      background: linear-gradient(to bottom, #5e4811, #d4aa37, #5e4811);
+      margin-left: -3px; margin-top: -36px;
+      border-radius: 3px; z-index: -1;
+      box-shadow: 1px 2px 3px rgba(0,0,0,0.4);
+    }
+
+    #ball-shadow {
+      position: absolute;
+      width: 15px; height: 11px;
+      background: rgba(0, 0, 0, 0.65);
+      filter: blur(1.5px);
+      border-radius: 50%;
+      z-index: 25; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      display: none; will-change: transform;
+      pointer-events: none;
+    }
+
+    #roulette-ball {
+      position: absolute;
+      width: 15px; height: 15px;
+      background: radial-gradient(circle at 4px 4px, #ffffff, #e6b83b 60%, #4a3605);
+      border-radius: 50%;
+      z-index: 30; top: 50%; left: 50%;
+      transform: translate(-50%, -50%); 
+      box-shadow: 1px 1px 4px rgba(0,0,0,0.5);
+      display: none; will-change: transform;
+      pointer-events: none;
+    }
+
+    #result-banner {
+      position: absolute;
+      width: 370px; height: 250px; top: 50%; left: 50%;
+      transform: translate(-50%, -50%) scale(0.7) rotate(-3deg);
+      background: rgba(18, 10, 4, 0.98);
+      border: 2px solid #b58920;
+      box-shadow: inset 0 0 0 4px rgba(18, 10, 4, 0.98), inset 0 0 0 6px #5e4811, 0 10px 30px rgba(0,0,0,0.85), 0 0 30px rgba(255,170,0,0.3);
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      z-index: 100; opacity: 0; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; padding: 10px; 
+    }
+    #result-banner.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1) rotate(0deg);
+    }
+
+    #result-img { max-width: 90%; max-height: 160px; object-fit: contain; border: 2px solid #b58920; margin-bottom: 8px; display: none; }
+    #result-text { color: #e5b83b; font-size: 17px; font-weight: bold; white-space: nowrap; }
+
+    #guide-text {
+      position: absolute; bottom: 135px; width: 100%; text-align: center;
+      color: #f0e2c3; font-size: 22px; font-weight: bold;
+      text-shadow: 2px 2px 4px #000, 0 0 10px #ff5500; z-index: 40;
+      animation: blink 1.5s infinite alternate;
+      pointer-events: none;
+    }
+    @keyframes blink { 0% { opacity: 0.3; } 100% { opacity: 0.9; } }
+  </style>
+</head>
+<body>
+
+  <div id="game-container">
+    <div id="roulette-wrapper">
+      <svg id="roulette-board" viewBox="0 0 500 500" width="500" height="500">
+        <defs>
+          <filter id="neon-glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="5" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+        <g id="svg-slices-layer"></g>
+      </svg>
+
+      <div id="ball-shadow"></div>
+      <div id="roulette-ball"></div>
+      <div id="center-pin">
+        <div class="pin-spoke" style="transform: rotate(0deg)"></div>
+        <div class="pin-spoke" style="transform: rotate(45deg)"></div>
+        <div class="pin-spoke" style="transform: rotate(90deg)"></div>
+        <div class="pin-spoke" style="transform: rotate(135deg)"></div>
+      </div>
+    </div>
+
+    <div id="guide-text">画面を叩いて、天命を待つ</div>
+
+    <div id="result-banner">
+      <img id="result-img" src="" alt="料理写真">
+      <div id="result-text"></div>
+    </div>
+  </div>
+
+  <script>
+    const rouletteNumbers = [
+      0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10,
+      5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26
+    ];
+
+    const menus = ["いっちービール", "焼き餃子", "肉豆腐", "みそ串カツ", "スパイス玉子", "こぼれ麻婆豆腐", "生レバーのジュワッと焼き", "海鮮プチぜいたく盛り", "赤鶏のお刺身", "ふくろうミンチ"];
+    const menuImages = ["beer.jpg", "gyoza.jpg", "nikutofu.jpg", "misokushi.jpg", "spiceegg.jpg", "kobore.jpg", "liver.jpg", "putimori.jpg", "torisashi.jpg", "mince.jpg"];
+
+    function getMenuIndexFromNumber(num) {
+      if (num === 0) return 0;
+      let remainder = num % 9;
+      return remainder === 0 ? 9 : remainder;
+    }
+
+    const visualColors = [
+      { color: "#009944", led: "#00ff66", isDark: true }, 
+      { color: "#f69445", led: "#ff5500" }, 
+      { color: "#f6ede2", led: "#ffaa00" }, 
+      { color: "#2372b7", led: "#00aeff", isDark: true }, 
+      { color: "#bd242a", led: "#ff0044", isDark: true }, 
+      { color: "#f39800", led: "#ffb700" }, 
+      { color: "#009944", led: "#00ff66", isDark: true }, 
+      { color: "#fbe134", led: "#ffee00" }, 
+      { color: "#2372b7", led: "#00aeff", isDark: true }, 
+      { color: "#f6ede2", led: "#ffaa00" }, 
+      { color: "#bd242a", led: "#ff0044", isDark: true }, 
+      { color: "#009944", led: "#00ff66", isDark: true }, 
+      { color: "#f6ede2", led: "#ffaa00" }, 
+      { color: "#f39800", led: "#ffb700" }, 
+      { color: "#2372b7", led: "#00aeff", isDark: true }, 
+      { color: "#bd242a", fill: "#ff0044", led: "#ff0044", isDark: true }, 
+      { color: "#f6ede2", led: "#ffaa00" }, 
+      { color: "#1c1c1c", led: "#ff2255", isDark: true }, 
+      { color: "#2372b7", led: "#00aeff", isDark: true }, 
+      { color: "#fbe134", led: "#ffee00" }  
+    ];
+
+    const totalSlices = 37;
+    const sliceAngle = 360 / totalSlices;
+
+    function getShortMenuName(fullName) {
+      if (fullName === "いっちービール") return "いっち｜";
+      if (fullName === "生レバーのジュワッと焼き") return "レバ｜";
+      if (fullName === "海鮮プチぜいたく盛り") return "海鮮盛";
+      if (fullName === "赤鶏のお刺身") return "鳥刺し";
+      if (fullName === "こぼれ麻婆豆腐") return "麻婆豆腐";
+      return fullName;
+    }
+
+    function renderAndFreezeWheel() {
+      const cx = 250, cy = 250, r = 250;
+      let svgContent = "";
+
+      rouletteNumbers.forEach((num, idx) => {
+        const startDeg = idx * sliceAngle - 90;
+        const endDeg = (idx + 1) * sliceAngle - 90;
+        const middleDeg = startDeg + sliceAngle / 2;
+
+        let config = visualColors[0];
+        if (num !== 0) {
+          let loopIdx = ((idx - 1) % (visualColors.length - 1)) + 1;
+          config = visualColors[loopIdx];
+        }
+
+        const rad1 = (startDeg * Math.PI) / 180;
+        const rad2 = (endDeg * Math.PI) / 180;
+        const x1 = cx + r * Math.cos(rad1);
+        const y1 = cy + r * Math.sin(rad1);
+        const x2 = cx + r * Math.cos(rad2);
+        const y2 = cy + r * Math.sin(rad2);
+
+        svgContent += `<path d="M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2} Z" fill="${config.color}" stroke="rgba(54,31,14,0.35)" stroke-width="1" />`;
+
+        const ledR = r - 8;
+        const ledRad = (middleDeg * Math.PI) / 180;
+        const ledX = cx + ledR * Math.cos(ledRad);
+        const ledY = cy + ledR * Math.sin(ledRad);
+        svgContent += `
+          <circle cx="${ledX}" cy="${ledY}" r="11" fill="${config.led}" opacity="0.35" filter="url(#neon-glow)" />
+          <circle cx="${ledX}" cy="${ledY}" r="5" fill="${config.led}" />
+          <circle cx="${ledX}" cy="${ledY}" r="1.8" fill="#ffffff" />
+        `;
+
+        const badgeR = r - 26;
+        const bX = cx + badgeR * Math.cos(ledRad);
+        const bY = cy + badgeR * Math.sin(ledRad);
+        svgContent += `<circle cx="${bX}" cy="${bY}" r="11" fill="#111111" stroke="${config.led}" stroke-width="1.5" /><text x="${bX}" y="${bY}" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle" dominant-baseline="central" font-family="sans-serif">${num}</text>`;
+
+        const menuName = getShortMenuName(menus[getMenuIndexFromNumber(num)]);
+        const textColor = config.isDark ? "#ffffff" : "#111111";
+        
+        const textRadius = 180;
+        const tX = cx + textRadius * Math.cos(ledRad);
+        const tY = cy + textRadius * Math.sin(ledRad);
+        const textAngle = middleDeg + 90;
+
+        let textLinesHtml = "";
+        const chars = menuName.split("");
+        
+        chars.forEach((char, charIdx) => {
+          const yOffset = charIdx * 14.5;
+          let rotateOffset = 0;
+          let xOffset = 0;
+          
+          if (char === "ー") { rotateOffset = -90; }
+          if (char === "っ" || char === "ッ") { xOffset = 2.0; }
+
+          textLinesHtml += `<text x="${xOffset}" y="${yOffset}" transform="rotate(${rotateOffset})" fill="${textColor}" font-size="11.5" font-weight="900" text-anchor="middle" dominant-baseline="central" font-family="serif">${char}</text>`;
+        });
+
+        svgContent += `<g transform="translate(${tX}, ${tY}) rotate(${textAngle})">${textLinesHtml}</g>`;
+      });
+
+      // 画像ソースへの代入ではなく、DOM（内部構造）へ直接安全に出力して描画エラーを100%回避
+      document.getElementById('svg-slices-layer').innerHTML = svgContent;
+    }
+
+    renderAndFreezeWheel();
+
+    // ゲーム制御
+    const gameContainer = document.getElementById('game-container');
+    const boardContainer = document.getElementById('roulette-board');
+    const rouletteWrapper = document.getElementById('roulette-wrapper');
+    const ball = document.getElementById('roulette-ball'); 
+    const shadow = document.getElementById('ball-shadow');
+    const resultBanner = document.getElementById('result-banner');
+    const resultImg = document.getElementById('result-img');
+    const resultText = document.getElementById('result-text');
+    const guideText = document.getElementById('guide-text');
+
+    let isRunning = false;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+    
+    function playTaiko() {
+      initAudio();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain(); 
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.2);
+      gain.gain.setValueAtTime(0.8, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+    }
+
+    function playBallRoll(freq = 400, vol = 0.05, duration = 0.03, shouldFlash = false) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(vol, audioCtx.currentTime); 
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + duration);
+
+      if (shouldFlash) {
+        gameContainer.classList.add('neon-flash');
+        rouletteWrapper.classList.add('frame-flash');
+        setTimeout(() => {
+          gameContainer.classList.remove('neon-flash');
+          rouletteWrapper.classList.remove('frame-flash');
+        }, 30);
+      }
+    }
+
+    function playPocketIn() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+      osc.frequency.setValueAtTime(150, audioCtx.currentTime + 0.05);
+      gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+    }
+
+    function triggerAction(e) {
+      if (isRunning) return;
+      initAudio();
+      isRunning = true;
+      guideText.style.display = 'none';
+      resultBanner.classList.remove('show'); 
+      ball.style.display = 'block';
+      shadow.style.display = 'block';
+
+      const luckyIndex = Math.floor(Math.random() * rouletteNumbers.length);
+      const chosenNumber = rouletteNumbers[luckyIndex];
+      const targetMenuIndex = getMenuIndexFromNumber(chosenNumber);
+      
+      const finalWheelAngle = (luckyIndex * sliceAngle) + (sliceAngle / 2);
+
+      playTaiko();
+
+      let startTime = null;
+      const duration = 15000; 
+      let lastSoundAngle = 0;
+
+      function animateCasino(timestamp) {
+        if (!startTime) startTime = timestamp;
+        const elapsed = timestamp - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easeOut = 1 - Math.pow(1 - progress, 6);
+
+        const boardTotalSpin = -21600; 
+        const currentBoardAngle = boardTotalSpin * (1 - easeOut);
+        
+        boardContainer.style.transform = `rotate(${currentBoardAngle}deg)`;
+
+        const ballTotalSpin = 43200; 
+        const currentBallAngle = (ballTotalSpin * easeOut) + finalWheelAngle + currentBoardAngle;
+
+        let startRadius = 142;
+        let endRadius = 106;
+        let currentRadius = startRadius - ((startRadius - endRadius) * Math.pow(progress, 3));
+
+        if (progress > 0.8) {
+          const gravityIntensity = (progress - 0.8) * 40; 
+          const gravityRad = (currentBallAngle - 90) * Math.PI / 180;
+          currentRadius += Math.sin(gravityRad) * gravityIntensity;
+        }
+
+        const ballRad = (currentBallAngle - 90) * Math.PI / 180;
+        let x = Math.cos(ballRad) * currentRadius;
+        let y = Math.sin(ballRad) * currentRadius;
+
+        let jumpOffset = 0;
+        let shadowScale = 1;
+        if (progress > 0.65 && progress < 0.98) {
+          const relativeAngle = currentBallAngle - currentBoardAngle;
+          const angleModulo = (relativeAngle % sliceAngle + sliceAngle) % sliceAngle;
+          if (angleModulo < sliceAngle * 0.2 || angleModulo > sliceAngle * 0.8) {
+            const jumpProgress = angleModulo < sliceAngle * 0.2 ? (sliceAngle * 0.2 - angleModulo) / (sliceAngle * 0.2) : (angleModulo - sliceAngle * 0.8) / (sliceAngle * 0.2);
+            jumpOffset = Math.sin(jumpProgress * Math.PI) * 4.5 * (1 - progress); 
+            shadowScale = 1 - (jumpOffset * 0.05); 
+          }
+        }
+
+        ball.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px - ${jumpOffset}px))`;
+        shadow.style.transform = `translate(calc(-50% + ${x}px + 1px), calc(-50% + ${y}px + 2.5px)) scale(${shadowScale})`;
+
+        let angleDiff = currentBallAngle - lastSoundAngle;
+        let isFinalPhase = progress > 0.8;
+
+        if (progress < 0.4) {
+          if (angleDiff >= 10) { playBallRoll(380, 0.04, 0.02, false); lastSoundAngle = currentBallAngle; }
+        } else if (progress < 0.7) {
+          if (angleDiff >= 18) { playBallRoll(580, 0.08, 0.02, false); lastSoundAngle = currentBallAngle; }
+        } else if (progress < 0.93) {
+          if (angleDiff >= 25) { playBallRoll(240, 0.15, 0.04, isFinalPhase); lastSoundAngle = currentBallAngle; }
+        }
+
+        if (progress < 1) {
+          requestAnimationFrame(animateCasino);
+        } else {
+          gameContainer.classList.add('neon-flash');
+          rouletteWrapper.classList.add('frame-flash');
+          playPocketIn();
+          
+          setTimeout(() => {
+            gameContainer.classList.remove('neon-flash');
+            rouletteWrapper.classList.remove('frame-flash');
+            
+            shadow.style.transform = `translate(calc(-50% + ${x}px + 1px), calc(-50% + ${y}px + 1.5px)) scale(1)`;
+            boardContainer.style.transform = `rotate(0deg)`;
+            resultImg.src = menuImages[targetMenuIndex];
+            resultImg.style.display = 'block';
+            resultText.innerText = `天が選びし一品：${menus[targetMenuIndex]}`;
+            
+            resultBanner.classList.add('show');
+            isRunning = false;
+          }, 150);
+        }
+      }
+      requestAnimationFrame(animateCasino);
+    }
+
+    gameContainer.addEventListener('pointerdown', triggerAction);
+    gameContainer.addEventListener('click', triggerAction);
+  </script>
+</body>
+</html>
