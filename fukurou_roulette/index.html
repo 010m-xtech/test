@@ -156,8 +156,6 @@
 
     #result-img { max-width: 90%; max-height: 150px; object-fit: contain; border: 2px solid #b58920; margin-bottom: 8px; display: none; }
     #result-text { color: #e5b83b; font-size: 17px; font-weight: bold; white-space: nowrap; margin-bottom: 6px; }
-    
-    /* コメント表示用のスタイル */
     #result-comment { color: #f0e2c3; font-size: 12px; font-family: sans-serif; text-align: center; line-height: 1.4; max-width: 90%; }
 
     #guide-text {
@@ -212,7 +210,6 @@
     const menus = ["いっちービール", "焼き餃子", "肉豆腐", "みそ串カツ", "スパイス玉子", "こぼれ麻婆豆腐", "生レバーのジュワッと焼き", "海鮮プチぜいたく盛り", "赤鶏のお刺身", "ふくろうミンチ"];
     const menuImages = ["beer.jpg", "gyoza.jpg", "nikutofu.jpg", "misokushi.jpg", "spiceegg.jpg", "kobore.jpg", "liver.jpg", "putimori.jpg", "torisashi.jpg", "mince.jpg"];
     
-    // 各メニューに対応するユニークコメント
     const menuComments = [
       "店長の顔を見ながら乾杯！今日もお疲れ様！",
       "外はパリッ、中はジュワッ！ビールが進みすぎる罪なやつ。",
@@ -223,7 +220,7 @@
       "鮮度抜群！ごま油と塩の黄金コンビで召し上がれ。",
       "海の恵みを独り占め！プチだけど満足度はマックス！",
       "この歯ごたえ、この旨味…知る人ぞ知る極上の一皿。",
-      "当店名物！迷ったらコレを叩き込むのが正解。"
+      "当店名名物！迷ったらコレを叩き込むのが正解。"
     ];
 
     function getMenuIndexFromNumber(num) {
@@ -346,11 +343,13 @@
     const resultBanner = document.getElementById('result-banner');
     const resultImg = document.getElementById('result-img');
     const resultText = document.getElementById('result-text');
-    const resultComment = document.getElementById('result-comment'); // 追加
+    const resultComment = document.getElementById('result-comment');
     const guideText = document.getElementById('guide-text');
 
     let isRunning = false;
     let audioCtx = null;
+    
+    // 【重要】過去の回転情報を完全にリセット・蓄積させないため、ベース角度を固定
     let currentBoardAngle = 0; 
 
     function initAudio() {
@@ -414,18 +413,21 @@
       ball.style.display = 'block';
       shadow.style.display = 'block';
 
+      // 1. 毎回完全にランダムなインデックス(0〜36)を決定
       const luckyIndex = Math.floor(Math.random() * rouletteNumbers.length);
       const chosenNumber = rouletteNumbers[luckyIndex];
       const targetMenuIndex = getMenuIndexFromNumber(chosenNumber);
       
+      // 2. 選ばれたマスが「真上」に来るための基本角度
       const targetPocketAngle = -(luckyIndex * sliceAngle);
 
       playTaiko();
 
       let startTime = null;
-      const duration = 6500; 
+      const duration = 6500; // 演出時間
       let lastSoundAngle = 0;
 
+      // 盤面の総回転角度（3回転 + 目標のポケット位置）
       const finalBoardAngle = -1080 + targetPocketAngle; 
 
       function animateCasino(timestamp) {
@@ -433,20 +435,26 @@
         const elapsed = timestamp - startTime;
         const progress = Math.min(elapsed / duration, 1);
         
-        const easeOut = 1 - Math.pow(1 - progress, 6);
+        // 緩やかに減速するイージング式
+        const easeOut = 1 - Math.pow(1 - progress, 5);
 
+        // 盤面を回転
         currentBoardAngle = finalBoardAngle * easeOut;
         boardContainer.style.transform = `rotate(${currentBoardAngle}deg)`;
 
-        const ballTotalSpin = 2880; 
-        const currentBallAngle = (ballTotalSpin * (1 - easeOut)) + currentBoardAngle;
+        // 【バグ修正箇所】球の軌道計算
+        // 前回の残像や盤面回転と衝突しないよう、独立した純粋な順回転(時計回り)を加算
+        const ballSpins = 2160; // 球の単体回転量
+        const currentBallAngle = (ballSpins * (1 - progress)) + (targetPocketAngle * progress);
 
+        // 外周から内周へ落ちる半径のシミュレーション
         let startRadius = 142;
         let endRadius = 106;
         let currentRadius = startRadius - ((startRadius - endRadius) * Math.pow(progress, 3));
 
+        // 終盤のガタツキ
         if (progress > 0.85) {
-          const gravityIntensity = (progress - 0.85) * 15; 
+          const gravityIntensity = (progress - 0.85) * 12; 
           const gravityRad = (currentBallAngle - 90) * Math.PI / 180;
           currentRadius += Math.sin(gravityRad) * gravityIntensity;
         }
@@ -455,6 +463,7 @@
         let x = Math.cos(ballRad) * currentRadius;
         let y = Math.sin(ballRad) * currentRadius;
 
+        // ポケットの爪の跳ね返り
         let jumpOffset = 0;
         let shadowScale = 1;
         if (progress > 0.65 && progress < 0.98) {
@@ -470,15 +479,16 @@
         ball.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px - ${jumpOffset}px))`;
         shadow.style.transform = `translate(calc(-50% + ${x}px + 1px), calc(-50% + ${y}px + 2.5px)) scale(${shadowScale})`;
 
+        // 効果音の調整
         let angleDiff = currentBallAngle - lastSoundAngle;
         let isFinalPhase = progress > 0.8;
 
         if (progress < 0.4) {
-          if (angleDiff >= 10) { playBallRoll(380, 0.04, 0.02, false); lastSoundAngle = currentBallAngle; }
+          if (Math.abs(angleDiff) >= 10) { playBallRoll(380, 0.04, 0.02, false); lastSoundAngle = currentBallAngle; }
         } else if (progress < 0.7) {
-          if (angleDiff >= 15) { playBallRoll(580, 0.08, 0.02, false); lastSoundAngle = currentBallAngle; }
+          if (Math.abs(angleDiff) >= 15) { playBallRoll(580, 0.08, 0.02, false); lastSoundAngle = currentBallAngle; }
         } else if (progress < 0.93) {
-          if (angleDiff >= 20) { playBallRoll(240, 0.15, 0.04, isFinalPhase); lastSoundAngle = currentBallAngle; }
+          if (Math.abs(angleDiff) >= 20) { playBallRoll(240, 0.15, 0.04, isFinalPhase); lastSoundAngle = currentBallAngle; }
         }
 
         if (progress < 1) {
@@ -492,14 +502,17 @@
             gameContainer.classList.remove('neon-flash');
             rouletteWrapper.classList.remove('frame-flash');
             
-            shadow.style.transform = `translate(calc(-50% + ${x}px + 1px), calc(-50% + ${y}px + 1.5px)) scale(1)`;
+            // 最後に球をターゲットマスの中心にピタッと合わせる
+            const finalRad = (targetPocketAngle - 90) * Math.PI / 180;
+            const finalX = Math.cos(finalRad) * endRadius;
+            const finalY = Math.sin(finalRad) * endRadius;
+            ball.style.transform = `translate(calc(-50% + ${finalX}px), calc(-50% + ${finalY}px))`;
+            shadow.style.transform = `translate(calc(-50% + ${finalX}px + 1px), calc(-50% + ${finalY}px + 1.5px)) scale(1)`;
             
-            // 結果の反映
+            // 結果データの表示
             resultImg.src = menuImages[targetMenuIndex];
             resultImg.style.display = 'block';
             resultText.innerText = `天が選びし一品：${menus[targetMenuIndex]}`;
-            
-            // 【新機能】コメントを流し込む
             resultComment.innerText = menuComments[targetMenuIndex];
             
             resultBanner.classList.add('show');
