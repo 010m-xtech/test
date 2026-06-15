@@ -176,16 +176,16 @@
       transform: translate(-50%, -50%) scale(1) rotate(0deg);
     }
 
-    /* 【新設】写真の上の「運気上昇メニュー」タイトル用スタイル */
+    /* 「運気上昇メニュー」タイトル用スタイル */
     #result-title { color: #e5b83b; font-size: 24px; font-weight: bold; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
 
     /* 大きめ写真サイズ */
     #result-img { max-width: 90%; max-height: 170px; object-fit: contain; border: 3px solid #b58920; margin-bottom: 12px; display: none; }
     
-    /* 【修正】メニュー名のスタイル（フォントを大きく、太い赤文字に！） */
-    #result-text { color: #ff2211; font-size: 34px; font-weight: 900; white-space: nowrap; margin-bottom: 8px; text-shadow: 1px 1px 4px rgba(0,0,0,0.9); font-family: serif; }
+    /* メニュー名のスタイル（基本は大きく太い34px赤文字） */
+    #result-text { color: #ff2211; font-size: 34px; font-weight: 900; white-space: nowrap; margin-bottom: 8px; text-shadow: 1px 1px 4px rgba(0,0,0,0.9); font-family: serif; transition: font-size 0.2s ease; }
     
-    /* 【復活】コメント欄のスタイル */
+    /* コメント欄のスタイル */
     #result-comment { color: #f0e2c3; font-size: 13px; font-family: sans-serif; text-align: center; line-height: 1.4; max-width: 90%; }
 
     #guide-text {
@@ -458,8 +458,7 @@
       playTaiko();
 
       let startTime = null;
-      // 演出時間は1.5倍の7.5秒（7500ms）
-      const duration = 7500; 
+      const duration = 9000; // 9秒
       let lastSoundAngle = 0;
 
       const startBoardAngle = currentBoardAngle;
@@ -522,20 +521,28 @@
           
           currentBoardAngle = startBoardAngle + targetBoardRotation;
 
-          // 1秒追加されたタメの演出時間
           setTimeout(() => {
             gameContainer.classList.remove('neon-flash');
             rouletteWrapper.classList.remove('frame-flash');
             
             owlCharacter.classList.remove('owl-shaking');
 
-            // 100%一致する当選データを反映
+            const selectedMenuName = menus[targetMenuIndex];
+
+            // 【①の修正箇所】「生レバーのジュワッと焼き」の時だけフォントサイズを縮小
+            if (selectedMenuName === "生レバーのジュワッと焼き") {
+              resultText.style.fontSize = "23px"; // 枠内にきれいに収まるサイズに縮小
+            } else if (selectedMenuName === "海鮮プチぜいたく盛り") {
+              resultText.style.fontSize = "26px"; // 今後他の長いメニューが増えた時用の保険（中サイズ）
+            } else {
+              resultText.style.fontSize = "34px"; // 通常サイズ（肉豆腐などは大きいまま！）
+            }
+
             resultImg.src = menuImages[targetMenuIndex];
             resultImg.style.display = 'block';
             
-            // 【変更点】「天が選びし一品」は完全に消去し、料理名とコメントを流し込みます
-            resultText.innerText = menus[targetMenuIndex];
-            resultComment.innerText = menuComments[targetMenuIndex];
+            resultText.innerText = selectedMenuName;
+            resultComment.innerText = menuComments[targetMenuIndex]; // コメント欄もしっかり連動
             
             resultBanner.classList.add('show');
             isRunning = false;
