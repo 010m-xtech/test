@@ -226,7 +226,6 @@
   </div>
 
   <script>
-    // ルーレット盤面の数字の並び順（0番から時計回り）
     const rouletteNumbers = [
       0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10,
       5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26
@@ -248,12 +247,8 @@
       "当店名物！迷ったらコレを叩き込むのが正解。"
     ];
 
-    // 【バグの根本原因を破壊】
-    // 最初のコードにあった数式による割り出しを完全に廃止。
-    // 各マスの「数字(num)」に対して、10品(0〜9)のどれを表示させるかを完全に固定する絶対マップ。
-    // これにより、見た目の文字と当選メニューが100%絶対に一致します。
     function getMenuIndexFromNumber(num) {
-      if (num === 0) return 0; // 0番：ビール
+      if (num === 0) return 0;
       const absoluteMap = {
         32:1, 15:2, 19:3, 4:4, 21:5, 2:6, 25:7, 17:8, 34:9,
         6:1,  27:2, 13:3, 36:4, 11:5, 30:6, 8:7,  23:8, 10:9,
@@ -268,12 +263,12 @@
       { color: "#f69445", led: "#ff5500" }, 
       { color: "#f6ede2", led: "#ffaa00" }, 
       { color: "#2372b7", led: "#00aeff", isDark: true }, 
-      { color: "#bd242a", fill: "#ff0044", led: "#ff0044", isDark: true }, 
+      { color: "#bd242a", fill: "#ff0044", fill: "#ff0044", led: "#ff0044", isDark: true }, 
       { color: "#f39800", led: "#ffb700" }, 
       { color: "#009944", led: "#00ff66", isDark: true }, 
       { color: "#fbe134", led: "#ffee00" }, 
       { color: "#2372b7", led: "#00aeff", isDark: true }, 
-      { color: "#f6ede2", led: "#ffaa00" }, 
+      { color: "#f6ede2", fill: "#bd242a", led: "#ffaa00" }, 
       { color: "#bd242a", led: "#ff0044", isDark: true }, 
       { color: "#009944", led: "#00ff66", isDark: true }, 
       { color: "#f6ede2", led: "#ffaa00" }, 
@@ -447,7 +442,6 @@
 
       owlCharacter.classList.add('owl-shaking');
 
-      // 毎回完全にランダムなマスのインデックス（0〜36マス目）を決定
       const luckyIndex = Math.floor(Math.random() * rouletteNumbers.length);
       const chosenNumber = rouletteNumbers[luckyIndex];
       const targetMenuIndex = getMenuIndexFromNumber(chosenNumber);
@@ -455,14 +449,14 @@
       playTaiko();
 
       let startTime = null;
-      const duration = 5000; // 回転時間5秒
+      
+      // 【変更点】演出時間を5秒（5000）から 1.5倍の7.5秒（7500）に延長！
+      const duration = 7500; 
+      
       let lastSoundAngle = 0;
 
       const startBoardAngle = currentBoardAngle;
-      // 盤面は反時計回りにしっかり3回転以上回す
       const targetBoardRotation = -1080; 
-      
-      // 球は時計回りに大回転しながら、最終的に「真上（フクロウの正面）」に来た当選マスにぴったり着地させる
       const totalBallSpin = 1800; 
       
       function animateCasino(timestamp) {
@@ -472,20 +466,16 @@
         
         const easeOut = 1 - Math.pow(1 - progress, 5);
 
-        // 盤面回転（反時計回り）
         currentBoardAngle = startBoardAngle + (targetBoardRotation * easeOut);
         boardContainer.style.transform = `rotate(${currentBoardAngle}deg)`;
 
-        // 【大修正】球の時計回り回転。 progress=1（終了時）に、選ばれたマスの角度（targetRelativeAngle）に寸分の狂いもなく完全に収束する数式
         const targetRelativeAngle = (luckyIndex * sliceAngle);
         const currentBallAngle = (totalBallSpin * (1 - easeOut)) - currentBoardAngle + targetRelativeAngle;
 
-        // 球が外周から徐々に内周へ落ちる半径の計算
         let startRadius = 142;
         let endRadius = 106;
         let currentRadius = startRadius - ((startRadius - endRadius) * Math.pow(progress, 3));
 
-        // 終盤のガタツキ演出
         if (progress > 0.85) {
           const gravityIntensity = (progress - 0.85) * 12; 
           const gravityRad = (currentBallAngle - 90) * Math.PI / 180;
@@ -496,7 +486,6 @@
         let x = Math.cos(ballRad) * currentRadius;
         let y = Math.sin(ballRad) * currentRadius;
 
-        // 爪を乗り越える跳ね返り
         let jumpOffset = 0;
         let shadowScale = 1;
         if (progress > 0.65 && progress < 0.98) {
@@ -512,7 +501,6 @@
         ball.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px - ${jumpOffset}px))`;
         shadow.style.transform = `translate(calc(-50% + ${x}px + 1px), calc(-50% + ${y}px + 2.5px)) scale(${shadowScale})`;
 
-        // 効果音
         let angleDiff = currentBallAngle - lastSoundAngle;
         if (progress < 0.8) {
           if (Math.abs(angleDiff) >= 15) { playBallRoll(380, 0.05, 0.02, false); lastSoundAngle = currentBallAngle; }
@@ -521,22 +509,18 @@
         if (progress < 1) {
           requestAnimationFrame(animateCasino);
         } else {
-          // 停止した瞬間のネオンフラッシュ
           gameContainer.classList.add('neon-flash');
           rouletteWrapper.classList.add('frame-flash');
           playPocketIn();
           
-          // 現在の盤面角度を保存
           currentBoardAngle = startBoardAngle + targetBoardRotation;
 
-          // 【1秒のタメ】球が止まってから結果バナーが出るまで、たっぷり1150ms（1.15秒）待たせる
           setTimeout(() => {
             gameContainer.classList.remove('neon-flash');
             rouletteWrapper.classList.remove('frame-flash');
             
             owlCharacter.classList.remove('owl-shaking');
 
-            // 球が止まったマスのデータを100%の正確さでバナーに反映
             resultImg.src = menuImages[targetMenuIndex];
             resultImg.style.display = 'block';
             resultText.innerText = `天が選びし一品：${menus[targetMenuIndex]}`;
