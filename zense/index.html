@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>前世タイムスリップ占い</title>
+  <title>前世タイムスリップ診断</title>
   <style>
-    /* 全体・スマホ向け縦型デザイン */
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
       font-family: 'Helvetica Neue', Arial, sans-serif;
-      background-color: #1a1a2e;
+      background-color: #0d0e15;
       color: #fff;
       display: flex;
       justify-content: center;
@@ -17,102 +17,198 @@
       min-height: 100vh;
       overflow-x: hidden;
     }
+
+    /* 全体コンテナ */
     .container {
       width: 100%;
       max-width: 480px;
       min-height: 100vh;
-      background: #16213e;
       position: relative;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 20px;
-      text-align: center;
     }
 
-    /* 画面切り替え用 */
-    .screen { display: none; width: 100%; }
-    .screen.active { display: flex; flex-direction: column; align-items: center; }
+    /* 画面切り替えクラス */
+    .screen {
+      display: none;
+      width: 100%;
+      min-height: 100vh;
+      padding: 30px 20px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
 
-    /* 見出し・テキスト */
-    h1 { font-size: 1.8rem; color: #e94560; margin-bottom: 10px; }
-    h2 { font-size: 1.3rem; margin-bottom: 20px; color: #f2a365; }
-    p { font-size: 1rem; line-height: 1.5; margin-bottom: 20px; }
+    .screen.active {
+      display: flex;
+    }
 
-    /* フォーム・ボタン */
-    .form-group { width: 100%; margin-bottom: 15px; text-align: left; }
-    label { display: block; margin-bottom: 5px; font-size: 0.9rem; color: #cccccc; }
+    /* ① 設問画面：指定の背景画像を設定 */
+    #quiz-screen {
+      /* 添付2枚目の画像を背景に指定 */
+      background: url('スクリーンショット 2026-07-27 173118.jpg') no-repeat center center / cover;
+      position: relative;
+    }
+
+    /* 文字を読みやすくするための暗めオーバーレイ */
+    #quiz-screen::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(10, 15, 30, 0.75); /* 画像の上に半透明の濃紺を重ねる */
+      z-index: 1;
+    }
+
+    /* 設問コンテンツを前面に配置 */
+    .quiz-content {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      color: #ff3366;
+      margin-bottom: 8px;
+      text-shadow: 0 0 10px rgba(255, 51, 102, 0.5);
+    }
+
+    p.subtitle {
+      font-size: 0.95rem;
+      color: #e0e0e0;
+      line-height: 1.5;
+      margin-bottom: 25px;
+    }
+
+    /* フォーム要素 */
+    .form-group {
+      width: 100%;
+      margin-bottom: 15px;
+      text-align: left;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+      color: #f0f0f0;
+      font-weight: bold;
+    }
+
     select, input {
       width: 100%;
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid #0f3460;
-      background: #0f3460;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(20, 25, 45, 0.85);
       color: #fff;
-      font-size: 1rem;
+      font-size: 0.95rem;
+      backdrop-filter: blur(5px);
+      outline: none;
     }
 
+    select:focus, input:focus {
+      border-color: #ff3366;
+    }
+
+    /* ボタンデザイン */
     .btn {
       width: 100%;
-      padding: 15px;
+      padding: 16px;
       border: none;
       border-radius: 30px;
-      background: linear-gradient(45deg, #ff416c, #ff4b2b);
+      background: linear-gradient(45deg, #ff3366, #ff6633);
       color: white;
-      font-size: 1.2rem;
+      font-size: 1.15rem;
       font-weight: bold;
       cursor: pointer;
-      box-shadow: 0 4px 15px rgba(255, 65, 108, 0.4);
-      margin-top: 10px;
+      box-shadow: 0 4px 20px rgba(255, 51, 102, 0.5);
+      margin-top: 15px;
+      transition: transform 0.2s, box-shadow 0.2s;
     }
 
-    /* 動画画面 */
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    /* ② 動画再生画面（全画面表示） */
     #video-screen {
       position: fixed;
-      top: 0; left: 0; width: 100vw; height: 100vh;
-      background: black;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: #000;
       z-index: 100;
       display: none;
     }
+
     #time-video {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
 
-    /* 診断結果画面 */
+    /* ③ 結果画面 */
+    #result-screen {
+      background: radial-gradient(circle at center, #1a1f36 0%, #0d0e15 100%);
+    }
+
     .result-card {
-      background: #0f3460;
-      border-radius: 15px;
-      padding: 20px;
-      border: 2px solid #e94560;
-      box-shadow: 0 0 20px rgba(233, 69, 96, 0.3);
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      padding: 25px 20px;
+      border: 1px solid rgba(255, 51, 102, 0.3);
+      box-shadow: 0 0 30px rgba(255, 51, 102, 0.2);
+      backdrop-filter: blur(10px);
       width: 100%;
     }
+
     .category-badge {
       display: inline-block;
-      padding: 5px 15px;
-      background: #e94560;
-      border-radius: 15px;
+      padding: 6px 16px;
+      background: #ff3366;
+      border-radius: 20px;
       font-size: 0.8rem;
       font-weight: bold;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
+      letter-spacing: 1px;
     }
+
     .past-life-title {
       font-size: 1.6rem;
       color: #ffd700;
       margin-bottom: 15px;
+      font-weight: bold;
+      text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
     }
+
+    .past-life-desc {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #dcdcdc;
+      margin-bottom: 20px;
+    }
+
     .menu-box {
-      margin-top: 20px;
-      background: #16213e;
+      background: rgba(0, 0, 0, 0.4);
       padding: 15px;
-      border-radius: 10px;
-      border: 1px dashed #f2a365;
+      border-radius: 12px;
+      border: 1px dashed #ff9933;
     }
-    .menu-title { font-size: 0.9rem; color: #f2a365; }
-    .menu-name { font-size: 1.3rem; font-weight: bold; color: #fff; margin-top: 5px; }
+
+    .menu-title {
+      font-size: 0.85rem;
+      color: #ff9933;
+      margin-bottom: 5px;
+    }
+
+    .menu-name {
+      font-size: 1.25rem;
+      font-weight: bold;
+      color: #fff;
+    }
   </style>
 </head>
 <body>
@@ -120,60 +216,62 @@
   <div class="container">
 
     <div id="quiz-screen" class="screen active">
-      <h1>前世タイムスリップ診断</h1>
-      <p>過去の記憶を呼び覚まします。<br>直感でお答えください。</p>
+      <div class="quiz-content">
+        <h1>前世タイムスリップ診断</h1>
+        <p class="subtitle">時空を超えて、あなたの前世の記憶を巡ります。<br>直感でお答えください。</p>
 
-      <div class="form-group">
-        <label>① 生年月日</label>
-        <input type="date" id="birthdate" required>
+        <div class="form-group">
+          <label>① 生年月日</label>
+          <input type="date" id="birthdate" required>
+        </div>
+
+        <div class="form-group">
+          <label>② 性別</label>
+          <select id="gender">
+            <option value="1">回答しない / その他</option>
+            <option value="2">男性</option>
+            <option value="3">女性</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>③ お風呂で最初どこから洗う？</label>
+          <select id="q1">
+            <option value="1">頭</option>
+            <option value="2">顔</option>
+            <option value="3">右手・左手</option>
+            <option value="4">胸・お腹</option>
+            <option value="5">足</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>④ レストランでメニューを選ぶ時は？</label>
+          <select id="q2">
+            <option value="1">直感で即決</option>
+            <option value="2">一番人気の定番</option>
+            <option value="3">期間限定・珍しいもの</option>
+            <option value="4">迷った末に一緒の人と同じにする</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>⑤ 集中している時の無意識のクセは？</label>
+          <select id="q3">
+            <option value="1">腕組みをする</option>
+            <option value="2">髪や顔を触る</option>
+            <option value="3">貧乏ゆすり・足を組む</option>
+            <option value="4">ぼーっと一箇所を見つめる</option>
+          </select>
+        </div>
+
+        <button class="btn" onclick="startTimeSlip()">⏳ 前世へタイムスリップ！</button>
       </div>
-
-      <div class="form-group">
-        <label>② 性別</label>
-        <select id="gender">
-          <option value="1">回答しない / その他</option>
-          <option value="2">男性</option>
-          <option value="3">女性</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>③ お風呂で最初どこから洗う？</label>
-        <select id="q1">
-          <option value="1">頭</option>
-          <option value="2">顔</option>
-          <option value="3">右手・左手</option>
-          <option value="4">胸・お腹</option>
-          <option value="5">足</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>④ レストランでメニューを選ぶ時は？</label>
-        <select id="q2">
-          <option value="1">直感で即決</option>
-          <option value="2">一番人気の定番</option>
-          <option value="3">期間限定・珍しいもの</option>
-          <option value="4">迷った末に一緒の人と同じにする</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>⑤ 集中している時の無意識のクセは？</label>
-        <select id="q3">
-          <option value="1">腕組みをする</option>
-          <option value="2">髪や顔を触る</option>
-          <option value="3">貧乏ゆすり・足を組む</option>
-          <option value="4">ぼーっと一箇所を見つめる</option>
-        </select>
-      </div>
-
-      <button class="btn" onclick="startTimeSlip()">⏳ 前世へタイムスリップ！</button>
     </div>
 
     <div id="video-screen">
-      <video id="time-video" playsinline muted>
-        <source src="http://googleusercontent.com/generated_video_content/499849120189438794" type="video/mp4">
+      <video id="time-video" playsinline muted webkit-playsinline preload="auto">
+        <source src="time-travel.mp4" type="video/mp4">
       </video>
     </div>
 
@@ -181,21 +279,21 @@
       <div class="result-card">
         <span class="category-badge" id="res-category">王道・英雄系</span>
         <div class="past-life-title" id="res-title">中世の伝説の騎士</div>
-        <p id="res-desc">仲間を命懸けで守る誇り高き英雄！正義感が強く、周りから頼りにされるリーダータイプです。</p>
+        <p class="past-life-desc" id="res-desc">仲間を命懸けで守る誇り高き英雄！正義感が強く、頼りにされるリーダータイプです。</p>
 
         <div class="menu-box">
-          <div class="menu-title">🍗 前世のあなたが愛したソウルフード</div>
+          <div class="menu-title">🍺 前世のあなたが愛したソウルフード</div>
           <div class="menu-name" id="res-menu">【豪快！骨付き肉のステーキ】</div>
         </div>
       </div>
 
-      <button class="btn" onclick="resetQuiz()" style="margin-top: 20px;">🔄 もう一度診断する</button>
+      <button class="btn" onclick="resetQuiz()">🔄 もう一度診断する</button>
     </div>
 
   </div>
 
   <script>
-    // 占いデータベース（30パターンの抜粋版）
+    // 診断データ
     const results = [
       {
         category: "王道・英雄系",
@@ -229,7 +327,6 @@
       }
     ];
 
-    // タイムスリップ開始（動画再生）
     function startTimeSlip() {
       const quizScreen = document.getElementById('quiz-screen');
       const videoScreen = document.getElementById('video-screen');
@@ -238,23 +335,28 @@
       quizScreen.classList.remove('active');
       videoScreen.style.display = 'block';
 
-      // 動画再生
+      // 動画の再生
       video.currentTime = 0;
-      video.play().catch(e => {
-        // 自動再生制限対策（タップ直後のため基本OK）
-        console.log(e);
-      });
+      video.muted = true; // スマホでの自動再生制限をクリアするためミュート化
+      
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.error("動画再生エラー:", error);
+          // 万が一再生エラーが起きた場合はスキップして結果表示へ
+          videoScreen.style.display = 'none';
+          showResult();
+        });
+      }
 
-      // 動画が終わったら結果画面を表示
+      // 動画が終わったら結果画面に遷移
       video.onended = function() {
         videoScreen.style.display = 'none';
         showResult();
       };
     }
 
-    // 結果表示ロジック
     function showResult() {
-      // 質問の回答値を合算してランダム風に結果を分岐
       const q1 = parseInt(document.getElementById('q1').value);
       const q2 = parseInt(document.getElementById('q2').value);
       const q3 = parseInt(document.getElementById('q3').value);
@@ -270,7 +372,6 @@
       document.getElementById('result-screen').classList.add('active');
     }
 
-    // リセット
     function resetQuiz() {
       document.getElementById('result-screen').classList.remove('active');
       document.getElementById('quiz-screen').classList.add('active');
