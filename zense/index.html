@@ -9,7 +9,7 @@
 
     body {
       font-family: 'Helvetica Neue', Arial, sans-serif;
-      background-color: #0d0e15;
+      background-color: #0d0e15; /* 背景画像が読み込まれるまでの色 */
       color: #fff;
       display: flex;
       justify-content: center;
@@ -39,99 +39,128 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      position: relative; /* 子要素のz-indexを有効にするため */
     }
 
     .screen.active {
       display: flex;
     }
 
-    /* ① 設問画面：指定の背景画像を設定 */
+    /* =========================================
+       ① 設問画面：背景画像の設定（ここを修正）
+       ========================================= */
     #quiz-screen {
-      /* 添付2枚目の画像を背景に指定 */
-      background: url('スクリーンショット 2026-07-27 173118.jpg') no-repeat center center / cover;
-      position: relative;
+      /* 画像ファイル名を「background.jpg」にして、htmlと同じフォルダに入れてください */
+      background-image: url('background.jpg'); 
+      background-repeat: no-repeat;
+      background-position: center center;
+      background-size: cover; /* 画面全体を覆う */
+      background-attachment: fixed; /* スクロールしても背景を固定（スマホでの表示安定のため） */
     }
 
-    /* 文字を読みやすくするための暗めオーバーレイ */
+    /* 文字を読みやすくするための暗めオーバーレイ（重要） */
     #quiz-screen::before {
       content: "";
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
-      background: rgba(10, 15, 30, 0.75); /* 画像の上に半透明の濃紺を重ねる */
-      z-index: 1;
+      background-color: rgba(10, 15, 30, 0.7); /* 半透明の濃紺を重ねる */
+      z-index: 1; /* 背景とコンテンツの間 */
     }
 
     /* 設問コンテンツを前面に配置 */
     .quiz-content {
       position: relative;
-      z-index: 2;
+      z-index: 2; /* オーバーレイより前面 */
       width: 100%;
     }
+    /* ========================================= */
 
     h1 {
-      font-size: 1.8rem;
+      font-size: 2rem;
       color: #ff3366;
-      margin-bottom: 8px;
-      text-shadow: 0 0 10px rgba(255, 51, 102, 0.5);
+      margin-bottom: 10px;
+      text-shadow: 0 0 10px rgba(255, 51, 102, 0.8);
+      text-align: center;
     }
 
     p.subtitle {
       font-size: 0.95rem;
       color: #e0e0e0;
-      line-height: 1.5;
-      margin-bottom: 25px;
+      line-height: 1.6;
+      margin-bottom: 30px;
+      text-align: center;
     }
 
     /* フォーム要素 */
     .form-group {
       width: 100%;
-      margin-bottom: 15px;
+      margin-bottom: 18px;
       text-align: left;
     }
 
     label {
       display: block;
-      margin-bottom: 6px;
-      font-size: 0.9rem;
+      margin-bottom: 8px;
+      font-size: 1rem;
       color: #f0f0f0;
       font-weight: bold;
     }
 
+    /* 入力欄のスタイル：背景を少し透過させて背景画像になじませる */
     select, input {
       width: 100%;
-      padding: 12px 14px;
-      border-radius: 10px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      background: rgba(20, 25, 45, 0.85);
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background-color: rgba(20, 25, 45, 0.8);
       color: #fff;
-      font-size: 0.95rem;
-      backdrop-filter: blur(5px);
+      font-size: 1rem;
+      backdrop-filter: blur(5px); /* 背景を少しぼかす効果（対応ブラウザのみ） */
       outline: none;
+      -webkit-appearance: none; /* iOSのデフォルトスタイルを解除 */
     }
 
     select:focus, input:focus {
       border-color: #ff3366;
+      box-shadow: 0 0 10px rgba(255, 51, 102, 0.3);
+    }
+
+    /* 矢印アイコン（select要素用） */
+    .select-wrapper {
+      position: relative;
+      width: 100%;
+    }
+    .select-wrapper::after {
+      content: '▼';
+      font-size: 0.8rem;
+      color: #ccc;
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
     }
 
     /* ボタンデザイン */
     .btn {
       width: 100%;
-      padding: 16px;
+      padding: 18px;
       border: none;
-      border-radius: 30px;
+      border-radius: 35px;
       background: linear-gradient(45deg, #ff3366, #ff6633);
       color: white;
-      font-size: 1.15rem;
+      font-size: 1.2rem;
       font-weight: bold;
       cursor: pointer;
-      box-shadow: 0 4px 20px rgba(255, 51, 102, 0.5);
-      margin-top: 15px;
-      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 25px rgba(255, 51, 102, 0.6);
+      margin-top: 20px;
+      transition: transform 0.1s, box-shadow 0.2s;
     }
 
     .btn:active {
-      transform: scale(0.98);
+      transform: scale(0.97);
+      box-shadow: 0 2px 10px rgba(255, 51, 102, 0.4);
     }
 
     /* ② 動画再生画面（全画面表示） */
@@ -157,55 +186,57 @@
 
     .result-card {
       background: rgba(255, 255, 255, 0.05);
-      border-radius: 20px;
-      padding: 25px 20px;
+      border-radius: 25px;
+      padding: 30px 20px;
       border: 1px solid rgba(255, 51, 102, 0.3);
       box-shadow: 0 0 30px rgba(255, 51, 102, 0.2);
       backdrop-filter: blur(10px);
       width: 100%;
+      text-align: center;
     }
 
     .category-badge {
       display: inline-block;
-      padding: 6px 16px;
-      background: #ff3366;
+      padding: 7px 18px;
+      background-color: #ff3366;
       border-radius: 20px;
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       font-weight: bold;
-      margin-bottom: 12px;
+      margin-bottom: 15px;
       letter-spacing: 1px;
     }
 
     .past-life-title {
-      font-size: 1.6rem;
+      font-size: 1.8rem;
       color: #ffd700;
-      margin-bottom: 15px;
+      margin-bottom: 20px;
       font-weight: bold;
-      text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+      text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
     }
 
     .past-life-desc {
-      font-size: 0.95rem;
-      line-height: 1.6;
-      color: #dcdcdc;
-      margin-bottom: 20px;
+      font-size: 1rem;
+      line-height: 1.7;
+      color: #e0e0e0;
+      margin-bottom: 25px;
+      text-align: left;
     }
 
     .menu-box {
-      background: rgba(0, 0, 0, 0.4);
-      padding: 15px;
-      border-radius: 12px;
+      background-color: rgba(0, 0, 0, 0.5);
+      padding: 18px;
+      border-radius: 15px;
       border: 1px dashed #ff9933;
     }
 
     .menu-title {
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       color: #ff9933;
-      margin-bottom: 5px;
+      margin-bottom: 8px;
     }
 
     .menu-name {
-      font-size: 1.25rem;
+      font-size: 1.4rem;
       font-weight: bold;
       color: #fff;
     }
@@ -222,47 +253,56 @@
 
         <div class="form-group">
           <label>① 生年月日</label>
-          <input type="date" id="birthdate" required>
+          <input type="date" id="birthdate" value="2000-01-01" required>
         </div>
 
         <div class="form-group">
-          <label>② 性別</label>
-          <select id="gender">
-            <option value="1">回答しない / その他</option>
-            <option value="2">男性</option>
-            <option value="3">女性</option>
-          </select>
+          <label>② 朝起きて一番最初にすることは？</label>
+          <div class="select-wrapper">
+            <select id="q1">
+              <option value="1">スマホをチェックする</option>
+              <option value="2">水や飲み物を飲む</option>
+              <option value="3">伸びをする・顔を洗う</option>
+              <option value="4">二度寝の誘惑と戦う</option>
+            </select>
+          </div>
         </div>
 
         <div class="form-group">
           <label>③ お風呂で最初どこから洗う？</label>
-          <select id="q1">
-            <option value="1">頭</option>
-            <option value="2">顔</option>
-            <option value="3">右手・左手</option>
-            <option value="4">胸・お腹</option>
-            <option value="5">足</option>
-          </select>
+          <div class="select-wrapper">
+            <select id="q2">
+              <option value="1">頭</option>
+              <option value="2">顔</option>
+              <option value="3">右手・左手</option>
+              <option value="4">胸・お腹</option>
+              <option value="5">足</option>
+            </select>
+          </div>
         </div>
 
         <div class="form-group">
-          <label>④ レストランでメニューを選ぶ時は？</label>
-          <select id="q2">
-            <option value="1">直感で即決</option>
-            <option value="2">一番人気の定番</option>
-            <option value="3">期間限定・珍しいもの</option>
-            <option value="4">迷った末に一緒の人と同じにする</option>
-          </select>
+          <label>④ 道端に分かれ道があったらどっちを選びがち？</label>
+          <div class="select-wrapper">
+            <select id="q3">
+              <option value="1">明るくて広い道</option>
+              <option value="2">近道っぽい細い路地</option>
+              <option value="3">人通りが少ない静かな道</option>
+              <option value="4">気にせずナビ通り</option>
+            </select>
+          </div>
         </div>
 
         <div class="form-group">
           <label>⑤ 集中している時の無意識のクセは？</label>
-          <select id="q3">
-            <option value="1">腕組みをする</option>
-            <option value="2">髪や顔を触る</option>
-            <option value="3">貧乏ゆすり・足を組む</option>
-            <option value="4">ぼーっと一箇所を見つめる</option>
-          </select>
+          <div class="select-wrapper">
+            <select id="q4">
+              <option value="1">腕組みをする</option>
+              <option value="2">髪や顔を触る</option>
+              <option value="3">貧乏ゆすり・足を組む</option>
+              <option value="4">ぼーっと一箇所を見つめる</option>
+            </select>
+          </div>
         </div>
 
         <button class="btn" onclick="startTimeSlip()">⏳ 前世へタイムスリップ！</button>
@@ -277,13 +317,13 @@
 
     <div id="result-screen" class="screen">
       <div class="result-card">
-        <span class="category-badge" id="res-category">王道・英雄系</span>
-        <div class="past-life-title" id="res-title">中世の伝説の騎士</div>
-        <p class="past-life-desc" id="res-desc">仲間を命懸けで守る誇り高き英雄！正義感が強く、頼りにされるリーダータイプです。</p>
+        <span class="category-badge" id="res-category">category</span>
+        <div class="past-life-title" id="res-title">title</div>
+        <p class="past-life-desc" id="res-desc">description</p>
 
         <div class="menu-box">
           <div class="menu-title">🍺 前世のあなたが愛したソウルフード</div>
-          <div class="menu-name" id="res-menu">【豪快！骨付き肉のステーキ】</div>
+          <div class="menu-name" id="res-menu">【menu】</div>
         </div>
       </div>
 
@@ -293,38 +333,44 @@
   </div>
 
   <script>
-    // 診断データ
+    // 診断結果データ（30パターンを完全に実装）
     const results = [
-      {
-        category: "王道・英雄系",
-        title: "🛡️ 中世の伝説の騎士",
-        desc: "仲間を命懸けで守る誇り高き英雄！正義感が強く、頼りにされるリーダータイプです。",
-        menu: "豪快！肉料理・ステーキ"
-      },
-      {
-        category: "江戸・歴史系",
-        title: "👘 大繁盛した江戸の商人",
-        desc: "人とのご縁を結ぶ天才！愛嬌と抜群のコミュ力でどこに行っても可愛がられる商売上手。",
-        menu: "ふわふわ出汁巻き卵"
-      },
-      {
-        category: "動物・自然系",
-        title: "🐾 城下町の気ままな野良猫",
-        desc: "自分の心地よさを一番知っている愛されキャラ。マイペースだけど放っておけない魅力の持ち主。",
-        menu: "香ばしい炙りエイヒレ"
-      },
-      {
-        category: "ファンタジー系",
-        title: "🏴‍☠️ 大航海時代の海賊船長",
-        desc: "束縛を嫌う自由人！誰も思いつかないアイデアでピンチをチャンスに変えるパワーがあります。",
-        menu: "サクサク！フィッシュ＆チップス"
-      },
-      {
-        category: "新発想系",
-        title: "🚀 流れ星に乗ってきた宇宙の旅人",
-        desc: "どこか浮世離れしたユニークな感性の持ち主。「普通」にとらわれない新しい風を吹き込みます。",
-        menu: "あつあつ！揚げたこ焼き"
-      }
+      // 1. 王道・英雄系
+      { category: "王道・英雄系", title: "🛡️ 中世の伝説の騎士", desc: "仲間を命懸けで守る誇り高き英雄！正義感が強く、頼りにされるリーダータイプです。", menu: "豪快！肉料理・ステーキ" },
+      { category: "王道・英雄系", title: "⚔️ 戦国時代の天下人", desc: "圧倒的な強運と決断力の持ち主。周りを巻き込んで大きな事を成し遂げるパワーがあります。", menu: "香ばしい串焼き・焼き鳥" },
+      { category: "王道・英雄系", title: "🏴‍☠️ 大航海時代の海賊船長", desc: "束縛を嫌う自由人！誰も思いつかないアイデアでピンチをチャンスに変える才能があります。", menu: "サクサク！フィッシュ＆チップス" },
+      { category: "王道・英雄系", title: "🔱 古代エジプトのファラオ", desc: "存在だけで周囲を惹きつける天性のカリスマ。美意識が高く、自分の世界観を持っています。", menu: "ハーブ塩の枝豆・ナッツ" },
+      { category: "王道・英雄系", title: "🧙‍♂️ 魔法世界の宮廷魔導士", desc: "知的好奇心のかたまり。一見クールに見えて、心の中には熱い探求心が秘められています。", menu: "色鮮やかなカクテル・ドリンク" },
+      // 2. 江戸・歴史・職人系
+      { category: "江戸・歴史系", title: "👘 大繁盛した江戸の商人", desc: "人とのご縁を結ぶ天才！愛嬌と抜群のコミュ力でどこに行っても可愛がられる商売上手。", menu: "ふわふわ出汁巻き卵" },
+      { category: "職人系", title: "🔨 腕利きの昭和の頑固職人", desc: "妥協を許さないプロ意識の持ち主。一途で口下手だけど、温かい情に厚いタイプです。", menu: "シンプルな冷やしトマト" },
+      { category: "江戸・歴史系", title: "📝 平安貴族の歌人", desc: "感受性が豊かでロマンチスト。人の気持ちの変化に敏感な優しさを持っています。", menu: "出汁の効いたお茶漬け・スープ" },
+      { category: "職人系", title: "⚙️ からくり屋敷の発明家", desc: "遊び心あふれるクリエイター！日常の「不便」を「面白さ」に変える天才的なヒラメキ型。", menu: "変わり種のピザ・餃子" },
+      { category: "江戸・歴史系", title: "🏃‍♂️ 伝説の飛脚（ランナー）", desc: "フットワークの軽さはピカイチ！行動力があり、考える前に体が動くタイプです。", menu: "定番！フライドポテト" },
+      // 3. 動物・生き物系
+      { category: "動物系", title: "🐾 城下町の気ままな野良猫", desc: "自分の心地よさを一番知っている愛されキャラ。マイペースだけど放っておけない魅力の持ち主。", menu: "香ばしい炙りエイヒレ・魚" },
+      { category: "動物系", title: "🦅 大空をかける伝説のタカ", desc: "全体を見渡す広い視野を持つアドバイザー。観察眼が鋭く、本質を見抜く力があります。", menu: "焼き鳥（手羽先・モモ）" },
+      { category: "動物系", title: "🐻 森を守る長老グマ", desc: "包容力バツグンの癒やし系！いるだけで周りに安心感を与える、みんなの頼れる存在。", menu: "ソーセージ盛り合わせ" },
+      { category: "動物系", title: "🐋 深海の巨大クジラ", desc: "穏やかで器が大きい大器晩成型。めったなことでは動じない強靭なメンタルの持ち主です。", menu: "新鮮！お刺身盛り合わせ" },
+      { category: "動物系", title: "🕊️ 幸運を運ぶ白ツバメ", desc: "人と人をつなぐキュピット的存在！場の雰囲気をぱっと明るくするムードメーカーです。", menu: "ジューシー唐揚げ・チキン南蛮" },
+      // 4. ファンタジー・海外系
+      { category: "ファンタジー系", title: "👨‍🍳 宮廷パーティーの料理人", desc: "人を楽しませることが大好きなサービス精神の塊。「美味しい」「楽しい」を作る天才。", menu: "チーズナチョス・カルパッチョ" },
+      { category: "海外系", title: "🐫 シルクロードの旅芸人", desc: "どんな環境にもすぐ馴染む適応力！刺激と変化を求め、人生を冒険として楽しむタイプ。", menu: "スパイシーチキン・タコス" },
+      { category: "海外系", title: "🧀 アルプスのアルプホルン奏者", desc: "素直でピュアな心の持ち主。あなたの言葉や行動は、周囲の心にスッと響きます。", menu: "トロ〜りチーズ料理・フォンデュ" },
+      { category: "ファンタジー系", title: "🎭 仮面舞踏会の主催者", desc: "ミステリアスで魅力的な大人の雰囲気。実は人の観察が得意で、全体をコントロールするタイプ。", menu: "芳醇なワイン・ワイン煮込み" },
+      { category: "海外系", title: "🍺 北欧のヴァイキング勇士", desc: "宴と勝負事が大好き！賑やかな場所で本領を発揮する、熱いハートを持った熱血漢。", menu: "デカいグラスのビール・ハイボール" },
+      // 5. 日常・個性的職業系
+      { category: "日常系", title: "🖍️ 昭和の売れっ子漫画家", desc: "妄想力と世界観の構築力がバツグン！頭の中でいつも面白いストーリーを考えている人。", menu: "焼きそば・ナポリタン" },
+      { category: "個性的職業系", title: "🕵️ 秘密結社の暗号解読班", desc: "細かな違和感にすぐ気づく天才。人の嘘や本音を見抜くのが得意な「隠れナゾトキ好き」。", menu: "ちびちび食べる枝豆・ナッツ" },
+      { category: "日常系", title: "🏝️ 南の島のウクレレ職人", desc: "楽観的で「なんとかなるさ」が口癖。周りの焦りやストレスをすーっと消し去るヒーラー。", menu: "フルーティなトロピカルドリンク" },
+      { category: "個性的職業系", title: "📖 古書の街の図書委員長", desc: "静かだけど芯が強い！自分の「好き」を突き詰めるオタク気質で、深い知識を持っています。", menu: "カマンベールチーズ・クラッカー" },
+      { category: "個性的職業系", title: "🎩 月夜に現れる怪盗紳士", desc: "スマートで洗練された身こなし。誰も傷つけずに欲しいものを手に入れる世渡り上手。", menu: "上質な生ハム・オリーブ" },
+      // 6. 自然・神話系
+      { category: "自然系", title: "🌳 樹齢1000年の森の大木", desc: "どんなトラブルが起きてもどっしり構える圧倒的安定感。悩み相談を受けることが多い人。", menu: "ごぼうチップス・きゅうり漬け" },
+      { category: "神話系", title: "🌠 流れ星に乗ってきた宇宙の旅人", desc: "どこか浮世離れしたユニークな感性の持ち主。「普通」にとらわれない新しい風を吹き込みます。", menu: "丸い食べ物！たこ焼き" },
+      { category: "自然系", title: "🌕 夜空を照らす満月", desc: "陰で人を引き立てる優しさの持ち主。主役を引き立てながら、自分も密かに輝くタイプ。", menu: "チーズボール・コロッケ" },
+      { category: "神話系", title: "🧚 風を巻き起こす小さな妖精", desc: "お茶目でいたずら好き！アイデア豊富で、停滞した場にパッと変化をもたらすムードメーカー。", menu: "ひんやりデザート・パフェ" },
+      { category: "神話系", title: "⏱️ 時間を司る時計塔の針", desc: "計画的でタイムスケジュールを守るしっかり者。約束や締め切りを大事にする信頼度NO.1。", menu: "シュワシュワ弾けるハイボール" }
     ];
 
     function startTimeSlip() {
@@ -335,21 +381,20 @@
       quizScreen.classList.remove('active');
       videoScreen.style.display = 'block';
 
-      // 動画の再生
       video.currentTime = 0;
-      video.muted = true; // スマホでの自動再生制限をクリアするためミュート化
+      video.muted = true; // スマホ自動再生ブロック回避
       
       const playPromise = video.play();
       if (playPromise !== undefined) {
         playPromise.catch(error => {
           console.error("動画再生エラー:", error);
-          // 万が一再生エラーが起きた場合はスキップして結果表示へ
+          // エラー時は動画画面を隠して結果へ
           videoScreen.style.display = 'none';
           showResult();
         });
       }
 
-      // 動画が終わったら結果画面に遷移
+      // 動画終了時に結果を表示
       video.onended = function() {
         videoScreen.style.display = 'none';
         showResult();
@@ -357,13 +402,25 @@
     }
 
     function showResult() {
+      // 質問の回答値を取得
       const q1 = parseInt(document.getElementById('q1').value);
       const q2 = parseInt(document.getElementById('q2').value);
       const q3 = parseInt(document.getElementById('q3').value);
+      const q4 = parseInt(document.getElementById('q4').value);
       
-      const index = (q1 + q2 + q3) % results.length;
+      // 生年月日を数値化して加算（簡単なロジック）
+      const birthdate = document.getElementById('birthdate').value;
+      let birthNum = 0;
+      if(birthdate) {
+        birthNum = parseInt(birthdate.replace(/-/g, '')) % 100; // 年月日の数値を少し利用
+      }
+      
+      // 合計値から結果（0〜29）を決定
+      const totalScore = q1 + q2 + q3 + q4 + birthNum;
+      const index = totalScore % results.length;
       const res = results[index];
 
+      // 結果画面に反映
       document.getElementById('res-category').innerText = res.category;
       document.getElementById('res-title').innerText = res.title;
       document.getElementById('res-desc').innerText = res.desc;
