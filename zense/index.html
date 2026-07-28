@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>前世タイムスリップ診断</title>
+  <title>前世診断</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -35,7 +35,7 @@
       display: none;
       width: 100%;
       min-height: 100vh;
-      padding: 30px 20px;
+      padding: 25px 20px;
       flex-direction: column;
       align-items: center;
       justify-content: center;
@@ -55,13 +55,12 @@
       background-attachment: fixed;
     }
 
-    /* 設問画面用オーバーレイ */
     #quiz-screen::before {
       content: "";
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
-      background-color: rgba(10, 15, 30, 0.7);
+      background-color: rgba(10, 15, 30, 0.75);
       z-index: 1;
     }
 
@@ -72,18 +71,19 @@
     }
 
     h1 {
-      font-size: 2rem;
+      font-size: 2.2rem;
       color: #ff3366;
       margin-bottom: 10px;
       text-shadow: 0 0 10px rgba(255, 51, 102, 0.8);
       text-align: center;
+      font-weight: bold;
     }
 
     p.subtitle {
       font-size: 0.95rem;
       color: #e0e0e0;
       line-height: 1.6;
-      margin-bottom: 30px;
+      margin-bottom: 25px;
       text-align: center;
     }
 
@@ -97,25 +97,26 @@
     label {
       display: block;
       margin-bottom: 8px;
-      font-size: 1rem;
+      font-size: 0.95rem;
       color: #f0f0f0;
       font-weight: bold;
+      line-height: 1.4;
     }
 
-    select, input {
+    select {
       width: 100%;
       padding: 14px;
       border-radius: 12px;
       border: 1px solid rgba(255, 255, 255, 0.15);
-      background-color: rgba(20, 25, 45, 0.8);
+      background-color: rgba(20, 25, 45, 0.85);
       color: #fff;
-      font-size: 1rem;
+      font-size: 0.95rem;
       backdrop-filter: blur(5px);
       outline: none;
       -webkit-appearance: none;
     }
 
-    select:focus, input:focus {
+    select:focus {
       border-color: #ff3366;
       box-shadow: 0 0 10px rgba(255, 51, 102, 0.3);
     }
@@ -135,6 +136,14 @@
       pointer-events: none;
     }
 
+    /* 生年月日：年月日 横並びレイアウト */
+    .birth-group {
+      display: flex;
+      gap: 8px;
+    }
+    .birth-group .select-wrapper { flex: 1; }
+    .birth-group select { padding: 14px 8px; text-align: center; }
+
     /* ボタンデザイン */
     .btn {
       width: 100%;
@@ -147,15 +156,13 @@
       font-weight: bold;
       cursor: pointer;
       box-shadow: 0 4px 25px rgba(255, 51, 102, 0.6);
-      margin-top: 20px;
+      margin-top: 15px;
       transition: transform 0.1s, box-shadow 0.2s;
     }
 
-    .btn:active {
-      transform: scale(0.97);
-    }
+    .btn:active { transform: scale(0.97); }
 
-    /* ② 動画再生画面（全画面表示） */
+    /* ② 動画再生画面 */
     #video-screen {
       position: fixed;
       top: 0; left: 0;
@@ -171,11 +178,8 @@
       object-fit: cover;
     }
 
-    /* =========================================
-       ③ 結果画面：背景画像の設定（ここを修正）
-       ========================================= */
+    /* ③ 結果画面：背景画像「result_bg.jpg」 */
     #result-screen {
-      /* 画像ファイル名を「result_bg.jpg」にして、htmlと同じフォルダに入れてください */
       background-image: url('result_bg.jpg'); 
       background-repeat: no-repeat;
       background-position: center center;
@@ -183,18 +187,15 @@
       background-attachment: fixed;
     }
 
-    /* 結果画面用オーバーレイ（文字を読みやすくするため） */
     #result-screen::before {
       content: "";
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
-      /* 背景画像が明るいため、少し濃いめのオーバーレイをかける */
-      background-color: rgba(10, 10, 20, 0.6); 
+      background-color: rgba(10, 10, 20, 0.65);
       z-index: 1;
     }
 
-    /* 結果コンテンツを前面に配置 */
     .result-content {
       position: relative;
       z-index: 2;
@@ -203,66 +204,98 @@
       flex-direction: column;
       align-items: center;
     }
-    /* ========================================= */
 
+    /* 🎨 作り込んだ1枚の豪華診断結果カード */
     .result-card {
-      /* カード自体の背景を少し濃くして文字を浮かせる */
-      background-color: rgba(20, 25, 45, 0.85);
-      border-radius: 25px;
-      padding: 30px 20px;
-      border: 1px solid rgba(255, 51, 102, 0.4);
-      box-shadow: 0 0 30px rgba(255, 51, 102, 0.3);
-      backdrop-filter: blur(10px);
+      background: rgba(18, 22, 40, 0.92);
+      border-radius: 20px;
+      padding: 20px;
+      border: 2px solid #ff3366;
+      box-shadow: 0 0 25px rgba(255, 51, 102, 0.4);
+      backdrop-filter: blur(12px);
       width: 100%;
       text-align: center;
-      margin-bottom: 20px; /* ボタンとの間隔 */
+      margin-bottom: 15px;
     }
 
     .category-badge {
       display: inline-block;
-      padding: 7px 18px;
+      padding: 5px 15px;
       background-color: #ff3366;
-      border-radius: 20px;
-      font-size: 0.85rem;
+      border-radius: 15px;
+      font-size: 0.8rem;
       font-weight: bold;
-      margin-bottom: 15px;
+      margin-bottom: 10px;
       letter-spacing: 1px;
     }
 
+    /* イラスト表示エリア */
+    .hero-img-container {
+      width: 100%;
+      height: 180px;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .hero-img-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
     .past-life-title {
-      font-size: 1.8rem;
+      font-size: 1.5rem;
       color: #ffd700;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
       font-weight: bold;
-      text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+      line-height: 1.3;
     }
 
-    .past-life-desc {
-      font-size: 1rem;
-      line-height: 1.7;
+    /* エピソードボックス */
+    .story-box {
+      background: rgba(0, 0, 0, 0.4);
+      border-left: 3px solid #ff3366;
+      padding: 10px 12px;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.88rem;
+      line-height: 1.5;
       color: #e0e0e0;
-      margin-bottom: 25px;
       text-align: left;
+      margin-bottom: 12px;
     }
 
-    .menu-box {
-      background-color: rgba(0, 0, 0, 0.6);
-      padding: 18px;
-      border-radius: 15px;
-      border: 1px dashed #ff9933;
+    /* 現世への影響ボックス */
+    .impact-box {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      padding: 10px;
+      text-align: left;
+      margin-bottom: 12px;
+      font-size: 0.85rem;
+      line-height: 1.4;
     }
+    .impact-item { margin-bottom: 6px; }
+    .impact-item:last-child { margin-bottom: 0; }
+    .impact-tag-talent { color: #4deeea; font-weight: bold; }
+    .impact-tag-weak { color: #ff6b6b; font-weight: bold; }
 
-    .menu-title {
-      font-size: 0.9rem;
-      color: #ff9933;
-      margin-bottom: 8px;
+    /* 相性＆メニュー */
+    .sub-info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
     }
-
-    .menu-name {
-      font-size: 1.4rem;
-      font-weight: bold;
-      color: #fff;
+    .sub-box {
+      background: rgba(0, 0, 0, 0.5);
+      padding: 10px 8px;
+      border-radius: 10px;
+      border: 1px dashed rgba(255, 255, 255, 0.2);
+      font-size: 0.8rem;
     }
+    .sub-box-title { color: #ff9933; font-size: 0.75rem; margin-bottom: 4px; font-weight: bold; }
+    .sub-box-value { color: #fff; font-weight: bold; font-size: 0.9rem; }
   </style>
 </head>
 <body>
@@ -271,62 +304,19 @@
 
     <div id="quiz-screen" class="screen active">
       <div class="quiz-content">
-        <h1>前世タイムスリップ診断</h1>
-        <p class="subtitle">時空を超えて、あなたの前世の記憶を巡ります。<br>直感でお答えください。</p>
+        <h1>前世診断</h1>
+        <p class="subtitle">普段の何気ない行動から、あなたの前世を占います。<br>直感でお答えください。</p>
 
         <div class="form-group">
           <label>① 生年月日</label>
-          <input type="date" id="birthdate" value="2000-01-01" required>
-        </div>
-
-        <div class="form-group">
-          <label>② 朝起きて一番最初にすることは？</label>
-          <div class="select-wrapper">
-            <select id="q1">
-              <option value="1">スマホをチェックする</option>
-              <option value="2">水や飲み物を飲む</option>
-              <option value="3">伸びをする・顔を洗う</option>
-              <option value="4">二度寝の誘惑と戦う</option>
-            </select>
+          <div class="birth-group">
+            <div class="select-wrapper"><select id="birth-year"></select></div>
+            <div class="select-wrapper"><select id="birth-month"></select></div>
+            <div class="select-wrapper"><select id="birth-day"></select></div>
           </div>
         </div>
 
-        <div class="form-group">
-          <label>③ お風呂で最初どこから洗う？</label>
-          <div class="select-wrapper">
-            <select id="q2">
-              <option value="1">頭</option>
-              <option value="2">顔</option>
-              <option value="3">右手・左手</option>
-              <option value="4">胸・お腹</option>
-              <option value="5">足</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>④ 道端に分かれ道があったらどっちを選びがち？</label>
-          <div class="select-wrapper">
-            <select id="q3">
-              <option value="1">明るくて広い道</option>
-              <option value="2">近道っぽい細い路地</option>
-              <option value="3">人通りが少ない静かな道</option>
-              <option value="4">気にせずナビ通り</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>⑤ 集中している時の無意識のクセは？</label>
-          <div class="select-wrapper">
-            <select id="q4">
-              <option value="1">腕組みをする</option>
-              <option value="2">髪や顔を触る</option>
-              <option value="3">貧乏ゆすり・足を組む</option>
-              <option value="4">ぼーっと一箇所を見つめる</option>
-            </select>
-          </div>
-        </div>
+        <div id="random-questions-container"></div>
 
         <button class="btn" onclick="startTimeSlip()">⏳ 前世へタイムスリップ！</button>
       </div>
@@ -341,13 +331,39 @@
     <div id="result-screen" class="screen">
       <div class="result-content">
         <div class="result-card">
-          <span class="category-badge" id="res-category">category</span>
-          <div class="past-life-title" id="res-title">title</div>
-          <p class="past-life-desc" id="res-desc">description</p>
+          <span class="category-badge" id="res-category">カテゴリ</span>
+          
+          <div class="hero-img-container">
+            <img id="res-img" src="" alt="前世イラスト">
+          </div>
 
-          <div class="menu-box">
-            <div class="menu-title">🍺 前世のあなたが愛したソウルフード</div>
-            <div class="menu-name" id="res-menu">【menu】</div>
+          <div class="past-life-title" id="res-title">称号が入ります</div>
+
+          <div class="story-box">
+            <strong>📜 前世の物語:</strong><br>
+            <span id="res-story">ここに短いエピソードが入ります。</span>
+          </div>
+
+          <div class="impact-box">
+            <div class="impact-item">
+              <span class="impact-tag-talent">✨ 今の才能：</span>
+              <span id="res-talent">才能の説明</span>
+            </div>
+            <div class="impact-item">
+              <span class="impact-tag-weak">🌀 今の弱点：</span>
+              <span id="res-weak">弱点の説明</span>
+            </div>
+          </div>
+
+          <div class="sub-info-grid">
+            <div class="sub-box">
+              <div class="sub-box-title">💖 相性バツグン</div>
+              <div class="sub-box-value" id="res-match">相性の良い前世</div>
+            </div>
+            <div class="sub-box">
+              <div class="sub-box-title">🍺 愛したソウルフード</div>
+              <div class="sub-box-value" id="res-menu">メニュー名</div>
+            </div>
           </div>
         </div>
 
@@ -358,39 +374,188 @@
   </div>
 
   <script>
-    // 診断結果データ（30パターン）
-    const results = [
-      { category: "王道・英雄系", title: "🛡️ 中世の伝説の騎士", desc: "仲間を命懸けで守る誇り高き英雄！正義感が強く、頼りにされるリーダータイプです。", menu: "豪快！肉料理・ステーキ" },
-      { category: "王道・英雄系", title: "⚔️ 戦国時代の天下人", desc: "圧倒的な強運と決断力の持ち主。周りを巻き込んで大きな事を成し遂げるパワーがあります。", menu: "香ばしい串焼き・焼き鳥" },
-      { category: "王道・英雄系", title: "🏴‍☠️ 大航海時代の海賊船長", desc: "束縛を嫌う自由人！誰も思いつかないアイデアでピンチをチャンスに変える才能があります。", menu: "サクサク！フィッシュ＆チップス" },
-      { category: "王道・英雄系", title: "🔱 古代エジプトのファラオ", desc: "存在だけで周囲を惹きつける天性のカリサマ。美意識が高く、自分の世界観を持っています。", menu: "ハーブ塩の枝豆・ナッツ" },
-      { category: "王道・英雄系", title: "🧙‍♂️ 魔法世界の宮廷魔導士", desc: "知的好奇心のかたまり。一見クールに見えて、心の中には熱い探求心が秘められています。", menu: "色鮮やかなカクテル・ドリンク" },
-      { category: "江戸・歴史系", title: "👘 大繁盛した江戸の商人", desc: "人とのご縁を結ぶ天才！愛嬌と抜群のコミュ力でどこに行っても可愛がられる商売上手。", menu: "ふわふわ出汁巻き卵" },
-      { category: "職人系", title: "🔨 腕利きの昭和の頑固職人", desc: "妥協を許さないプロ意識の持ち主。一途で口下手だけど、温かい情に厚いタイプです。", menu: "シンプルな冷やしトマト" },
-      { category: "江戸・歴史系", title: "📝 平安貴族の歌人", desc: "感受性が豊かでロマンチスト。人の気持ちの変化に敏感な優しさを持っています。", menu: "出汁の効いたお茶漬け・スープ" },
-      { category: "職人系", title: "⚙️ からくり屋敷の発明家", desc: "遊び心あふれるクリエイター！日常の「不便」を「面白さ」に変える天才的なヒラメキ型。", menu: "変わり種のピザ・餃子" },
-      { category: "江戸・歴史系", title: "🏃‍♂️ 伝説の飛脚（ランナー）", desc: "フットワークの軽さはピカイチ！行動力があり、考える前に体が動くタイプです。", menu: "定番！フライドポテト" },
-      { category: "動物系", title: "🐾 城下町の気ままな野良猫", desc: "自分の心地よさを一番知っている愛されキャラ。マイペースだけど放っておけない魅力の持ち主。", menu: "香ばしい炙りエイヒレ・魚" },
-      { category: "動物系", title: "🦅 大空をかける伝説のタカ", desc: "全体を見渡す広い視野を持つアドバイザー。観察眼が鋭く、本質を見抜く力があります。", menu: "焼き鳥（手羽先・モモ）" },
-      { category: "動物系", title: "🐻 森を守る長老グマ", desc: "包容力バツグンの癒やし系！いるだけで周りに安心感を与える、みんなの頼れる存在。", menu: "ソーセージ盛り合わせ" },
-      { category: "動物系", title: "🐋 深海の巨大クジラ", desc: "穏やかで器が大きい大器晩成型。めったなことでは動じない強靭なメンタルの持ち主です。", menu: "新鮮！お刺身盛り合わせ" },
-      { category: "動物系", title: "🕊️ 幸運を運ぶ白ツバメ", desc: "人と人をつなぐキュピット的存在！場の雰囲力をぱっと明るくするムードメーカーです。", menu: "ジューシー唐揚げ・チキン南蛮" },
-      { category: "ファンタジー系", title: "👨‍🍳 宮廷パーティーの料理人", desc: "人を楽しませることが大好きなサービス精神の塊。「美味しい」「楽しい」を作る天才。", menu: "チーズナチョス・カルパッチョ" },
-      { category: "海外系", title: "🐫 シルクロードの旅芸人", desc: "どんな環境にもすぐ馴染む適応力！刺激と変化を求め、人生を冒険として楽しむタイプ。", menu: "スパイシーチキン・タコス" },
-      { category: "海外系", title: "🧀 アルプスのアルプホルン奏者", desc: "素直でピュアな心の持ち主。あなたの言葉や行動は、周囲の心にスッと響きます。", menu: "トロ〜りチーズ料理・フォンデュ" },
-      { category: "ファンタジー系", title: "🎭 仮面舞踏会の主催者", desc: "ミステリアスで魅力的な大人の雰囲気。実は人の観察が得意で、全体をコントロールするタイプ。", menu: "芳醇なワイン・ワイン煮込み" },
-      { category: "海外系", title: "🍺 北欧のヴァイキング勇士", desc: "宴と勝負事が大好き！賑やかな場所で本領を発揮する、熱いハートを持った熱血漢。", menu: "デカいグラスのビール・ハイボール" },
-      { category: "日常系", title: "🖍️ 昭和の売れっ子漫画家", desc: "妄想力と世界観の構築力がバツグン！頭の中でいつも面白いストーリーを考えている人。", menu: "焼きそば・ナポリタン" },
-      { category: "個性的職業系", title: "🕵️ 秘密結社の暗号解読班", desc: "細かな違和感にすぐ気づく天才。人の嘘や本音を見抜くのが得意な「隠れナゾトキ好き」。", menu: "ちびちび食べる枝豆・ナッツ" },
-      { category: "日常系", title: "🏝️ 南の島のウクレレ職人", desc: "楽観的で「なんとかなるさ」が口癖。周りの焦りやストレスをすーっと消し去るヒーラー。", menu: "フルーティなトロピカルドリンク" },
-      { category: "個性的職業系", title: "📖 古書の街の図書委員長", desc: "静かだけど芯が強い！自分の「好き」を突き詰めるオタク気質で、深い知識を持っています。", menu: "カマンベールチーズ・クラッカー" },
-      { category: "個性的職業系", title: "🎩 月夜に現れる怪盗紳士", desc: "スマートで洗練された身こなし。誰も傷つけずに欲しいものを手に入れる世渡り上手。", menu: "上質な生ハム・オリーブ" },
-      { category: "自然系", title: "🌳 樹齢1000年の森の大木", desc: "どんなトラブルが起きてもどっしり構える圧倒的安定感。悩み相談を受けることが多い人。", menu: "ごぼうチップス・きゅうり漬け" },
-      { category: "神話系", title: "🌠 流れ星に乗ってきた宇宙の旅人", desc: "どこか浮世離れしたユニークな感性の持ち主。「普通」にとらわれない新しい風を吹き込みます。", menu: "丸い食べ物！たこ焼き" },
-      { category: "自然系", title: "🌕 夜空を照らす満月", desc: "陰で人を引き立てる優しさの持ち主。主役を引き立てながら、自分も密かに輝くタイプ。", menu: "チーズボール・コロッケ" },
-      { category: "神話系", title: "🧚 風を巻き起こす小さな妖精", desc: "お茶目でいたずら好き！アイデア豊富で、停滞した場にパッと変化をもたらすムードメーカー。", menu: "ひんやりデザート・パフェ" },
-      { category: "神話系", title: "⏱️ 時間を司る時計塔の針", desc: "計画的でタイムスケジュールを守るしっかり者。約束や締め切りを大事にする信頼度NO.1。", menu: "シュワシュワ弾けるハイボール" }
+    // ランダム質問プール
+    const questionPool = [
+      { text: "カフェやレストランで座るならどこを選びがち？", options: ["壁際のすみっこ", "出入口に近い席", "外が見える窓際の席", "店内全体が見渡せる席"] },
+      { text: "部屋でくつろぐとき、どんな姿勢が多い？", options: ["体育座り（膝を抱える）", "横になってゴロゴロする", "正座やあぐら", "椅子やソファに深々と腰掛ける"] },
+      { text: "一番「落ち着く」と感じる部屋の明るさは？", options: ["間接照明や薄暗い部屋", "自然光が入る明るい部屋", "完全な真っ暗闇", "賑やかな照明（蛍光灯など）"] },
+      { text: "無意識に「安心する」香りはどれ？", options: ["雨の日の濡れた土や草の香り", "焚き火や薪の煙の香り", "古い本や木造の匂い", "潮風や海の香り"] },
+      { text: "買い物中、無意識に目が行ってしまう色は？", options: ["深い青や黒などのダークカラー", "太陽や炎を連想させる赤・オレンジ", "森や大地のような緑・ブラウン", "光や神秘を感じさせる白・ゴールド"] },
+      { text: "夢を見ているとき、よくあるシチュエーションは？", options: ["空を飛んでいる、または高い所から落ちる", "何かにひたすら追われている", "見知らぬ時代や外国の街を歩いている", "懐かしい人や知らない人と話している"] },
+      { text: "初対面の人と接するとき、無意識にとる距離感は？", options: ["少し遠めに立ち、相手を観察する", "すぐに打ち解けて距離を詰める", "相手の出方に完全に合わせる", "後ろや斜めから様子を伺う"] },
+      { text: "服を選ぶとき、一番重視するポイントは？", options: ["動きやすさ・機能性", "肌触りの良さ・着心地", "自分を守れるか（防寒・露出の少なさ等）", "周りからどう見られるか（見た目）"] }
     ];
+
+    // 🌟 厳選10通りの豪華診断結果データ
+    const results = [
+      {
+        category: "王道・英雄系",
+        title: "🛡️ 仲間を絶対に裏切らない 伝説の騎士",
+        img: "https://images.unsplash.com/photo-1599707367072-cd6ada2bc375?w=500&q=80",
+        story: "中世の戦場にて、最前線で味方の盾となり王国を守り抜いた。最期は仲間の笑顔に見送られ静かに眠りについた。",
+        talent: "圧倒的な正義感と、いざという時の頼りがい",
+        weak: "情に厚すぎて、断れずに損をしてしまいがち",
+        match: "江戸のほっこり団子屋",
+        menu: "豪快！骨付き肉のステーキ"
+      },
+      {
+        category: "江戸・歴史系",
+        title: "🍡 商売上手な 江戸のほっこり団子屋",
+        img: "https://images.unsplash.com/photo-1528164344705-47542687990d?w=500&q=80",
+        story: "城下町で誰もが立ち寄る名物茶屋を切り盛り。笑顔と美味いお茶で、街中の人々の悩みと空腹を癒やし続けた人生。",
+        talent: "相手の懐にスッと入る抜群のコミュ力",
+        weak: "お人好しで、ついついサービスしすぎてしまう",
+        match: "伝説の騎士",
+        menu: "ふわふわ出汁巻き卵"
+      },
+      {
+        category: "自由人・海賊系",
+        title: "🏴‍☠️ 嵐を恐れない 大航海時代のカリスマ船長",
+        img: "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=500&q=80",
+        story: "未開の海を求め、仲間と共に世界の果てまで旅をした。数々のピンチを豪快な笑いと度胸で切り抜けた伝説の大海賊。",
+        talent: "常識にとらわれない直感力と決断力",
+        weak: "退屈に耐えられず、じっとしているとイライラする",
+        match: "宮廷の星読み師",
+        menu: "フィッシュ＆チップス"
+      },
+      {
+        category: "動物・癒やし系",
+        title: "🐾 日向ぼっこを愛する 気ままな街の野良猫",
+        img: "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=500&q=80",
+        story: "港町のあちこちを散歩し、美味しいものを分けてもらいながら自由に生きた。みんなに愛された街のアイドル猫。",
+        talent: "自分の心地よさを優先できる自己肯定感",
+        weak: "気分屋で、急に興味を失う気まぐれさ",
+        match: "森の長老グマ",
+        menu: "香ばしい炙りエイヒレ"
+      },
+      {
+        category: "神秘・知性系",
+        title: "🔮 未来を見通す 宮廷の星読み師",
+        img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500&q=80",
+        story: "高い塔の上で星の動きを観察し、王国の運命を導いた賢者。静かな夜空と対話しながら真理を求め続けた生涯。",
+        talent: "物事の違和感や本質を一瞬で見抜く観察眼",
+        weak: "考えすぎて頭がいっぱいになり不眠になりやすい",
+        match: "大航海時代の船長",
+        menu: "あやしく光るオリジナルカクテル"
+      },
+      {
+        category: "職人・情熱系",
+        title: "⚙️ 密かに世界を変えた からくり屋敷の発明家",
+        img: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500&q=80",
+        story: "山奥の研究所で夜な夜なヘンテコな道具を作り続けた。人々をアッと言わせる瞬間を何より愛した孤高のクリエイター。",
+        talent: "1つのことに没頭したときの爆発的な集中力",
+        weak: "こだわりが強すぎて周りの意見を聞かなくなる",
+        match: "気ままな野良猫",
+        menu: "具だくさんミックスピザ"
+      },
+      {
+        category: "自然・包容力系",
+        title: "🐻 誰もを温かく包み込む 森の長老グマ",
+        img: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=500&q=80",
+        story: "深い森の奥で、迷い込んだ動物たちに木の実を分け与えていた。どっしり構えた姿で森の平和を守り抜いた頼れる存在。",
+        talent: "いるだけで周囲に安心感を与える圧倒的包容力",
+        weak: "のんびりしすぎて約束の時間に遅れがち",
+        match: "江戸のほっこり団子屋",
+        menu: "ソーセージ盛り合わせ"
+      },
+      {
+        category: "海外・芸術系",
+        title: "🍷 宴を華やかに彩る ヴェネツィアの貴族",
+        img: "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=500&q=80",
+        story: "水の都で夜な夜な華やかなパーティーを開催。美味しいワインと音楽を愛し、人々の笑顔に囲まれて人生を満喫した。",
+        talent: "華やかな場での立ち振る舞いと高い美意識",
+        weak: "見栄を張りすぎて財布の紐がゆるくなりがち",
+        match: "伝説の騎士",
+        menu: "濃厚アヒージョ＆ワイン"
+      },
+      {
+        category: "神話・ファンタジー系",
+        title: "🌠 宇宙から舞い降りた 流れ星の旅人",
+        img: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=500&q=80",
+        story: "銀河を旅する途中で地球の美しさに惹かれ、しばしの滞在を楽しんだ。独特な感性で人々に笑顔と奇跡をもたらした。",
+        talent: "常識の枠にハマらないユニークな発想力",
+        weak: "現実的な細かい作業や書類手続きが大の苦手",
+        match: "からくり屋敷の発明家",
+        menu: "あつあつ！揚げたこ焼き"
+      },
+      {
+        category: "日常・ひたむき系",
+        title: "📜 一語一会を慈しむ 古書の街の図書委員長",
+        img: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=500&q=80",
+        story: "静寂に包まれた図書室で、たくさんの物語を守り続けた。ひそかに訪れる人々にぴったりの一冊を差し出すのが喜びだった。",
+        talent: "じっくり物事を聞き届ける深い傾聴力",
+        weak: "自己主張が得意ではなく言いたいことを呑み込みがち",
+        match: "宮廷の星読み師",
+        menu: "カマンベールチーズ＆クラッカー"
+      }
+    ];
+
+    window.onload = function() {
+      initBirthdateSelects();
+      generateRandomQuestions();
+    };
+
+    function initBirthdateSelects() {
+      const yearSelect = document.getElementById('birth-year');
+      const monthSelect = document.getElementById('birth-month');
+      const daySelect = document.getElementById('birth-day');
+
+      yearSelect.innerHTML = ''; monthSelect.innerHTML = ''; daySelect.innerHTML = '';
+
+      for (let y = 1940; y <= 2026; y++) {
+        const option = document.createElement('option');
+        option.value = y; option.text = y + "年";
+        if (y === 2000) option.selected = true;
+        yearSelect.appendChild(option);
+      }
+      for (let m = 1; m <= 12; m++) {
+        const option = document.createElement('option');
+        option.value = m; option.text = m + "月";
+        if (m === 1) option.selected = true;
+        monthSelect.appendChild(option);
+      }
+      for (let d = 1; d <= 31; d++) {
+        const option = document.createElement('option');
+        option.value = d; option.text = d + "日";
+        if (d === 1) option.selected = true;
+        daySelect.appendChild(option);
+      }
+    }
+
+    function generateRandomQuestions() {
+      const container = document.getElementById('random-questions-container');
+      container.innerHTML = '';
+
+      const shuffled = [...questionPool].sort(() => 0.5 - Math.random());
+      const selectedQuestions = shuffled.slice(0, 4);
+      const numberPrefixes = ["②", "③", "④", "⑤"];
+
+      selectedQuestions.forEach((q, index) => {
+        const formGroup = document.createElement('div');
+        formGroup.className = 'form-group';
+
+        const label = document.createElement('label');
+        label.innerText = `${numberPrefixes[index]} ${q.text}`;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'select-wrapper';
+
+        const select = document.createElement('select');
+        select.className = 'random-q-select';
+
+        q.options.forEach((optText, optIndex) => {
+          const option = document.createElement('option');
+          option.value = optIndex + 1;
+          option.text = optText;
+          select.appendChild(option);
+        });
+
+        wrapper.appendChild(select);
+        formGroup.appendChild(label);
+        formGroup.appendChild(wrapper);
+        container.appendChild(formGroup);
+      });
+    }
 
     function startTimeSlip() {
       const quizScreen = document.getElementById('quiz-screen');
@@ -419,30 +584,37 @@
     }
 
     function showResult() {
-      const q1 = parseInt(document.getElementById('q1').value);
-      const q2 = parseInt(document.getElementById('q2').value);
-      const q3 = parseInt(document.getElementById('q3').value);
-      const q4 = parseInt(document.getElementById('q4').value);
+      const randomSelects = document.querySelectorAll('.random-q-select');
+      let randomScore = 0;
+      randomSelects.forEach(select => {
+        randomScore += parseInt(select.value);
+      });
+
+      const year = parseInt(document.getElementById('birth-year').value);
+      const month = parseInt(document.getElementById('birth-month').value);
+      const day = parseInt(document.getElementById('birth-day').value);
+      const birthNum = year + month + day;
       
-      const birthdate = document.getElementById('birthdate').value;
-      let birthNum = 0;
-      if(birthdate) {
-        birthNum = parseInt(birthdate.replace(/-/g, '')) % 100;
-      }
-      
-      const totalScore = q1 + q2 + q3 + q4 + birthNum;
+      // 10パターンの結果に正確に振分け（0〜9）
+      const totalScore = randomScore + birthNum;
       const index = totalScore % results.length;
       const res = results[index];
 
+      // カード各要素へデータ挿入
       document.getElementById('res-category').innerText = res.category;
+      document.getElementById('res-img').src = res.img;
       document.getElementById('res-title').innerText = res.title;
-      document.getElementById('res-desc').innerText = res.desc;
-      document.getElementById('res-menu').innerText = `【${res.menu}】`;
+      document.getElementById('res-story').innerText = res.story;
+      document.getElementById('res-talent').innerText = res.talent;
+      document.getElementById('res-weak').innerText = res.weak;
+      document.getElementById('res-match').innerText = res.match;
+      document.getElementById('res-menu').innerText = res.menu;
 
       document.getElementById('result-screen').classList.add('active');
     }
 
     function resetQuiz() {
+      generateRandomQuestions();
       document.getElementById('result-screen').classList.remove('active');
       document.getElementById('quiz-screen').classList.add('active');
     }
