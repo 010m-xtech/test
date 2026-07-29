@@ -205,7 +205,7 @@
       align-items: center;
     }
 
-    /* 🎨 作り込んだ1枚の豪華診断結果カード */
+    /* 🎨 診断結果カード */
     .result-card {
       background: rgba(18, 22, 40, 0.92);
       border-radius: 20px;
@@ -218,24 +218,13 @@
       margin-bottom: 15px;
     }
 
-    .category-badge {
-      display: inline-block;
-      padding: 5px 15px;
-      background-color: #ff3366;
-      border-radius: 15px;
-      font-size: 0.8rem;
-      font-weight: bold;
-      margin-bottom: 10px;
-      letter-spacing: 1px;
-    }
-
     /* イラスト表示エリア */
     .hero-img-container {
       width: 100%;
-      height: 180px;
+      height: 190px;
       border-radius: 12px;
       overflow: hidden;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
       border: 1px solid rgba(255, 255, 255, 0.2);
     }
     .hero-img-container img {
@@ -245,57 +234,64 @@
     }
 
     .past-life-title {
-      font-size: 1.5rem;
+      font-size: 1.55rem;
       color: #ffd700;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
       font-weight: bold;
       text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-      line-height: 1.3;
+      line-height: 1.35;
     }
 
-    /* エピソードボックス */
+    /* エピソードボックス（見出しを削除し文章のみスッキリ配置） */
     .story-box {
       background: rgba(0, 0, 0, 0.4);
       border-left: 3px solid #ff3366;
-      padding: 10px 12px;
+      padding: 12px 14px;
       border-radius: 0 8px 8px 0;
-      font-size: 0.88rem;
-      line-height: 1.5;
+      font-size: 0.9rem;
+      line-height: 1.6;
       color: #e0e0e0;
       text-align: left;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
 
     /* 現世への影響ボックス */
     .impact-box {
       background: rgba(255, 255, 255, 0.05);
       border-radius: 10px;
-      padding: 10px;
+      padding: 12px;
       text-align: left;
-      margin-bottom: 12px;
-      font-size: 0.85rem;
-      line-height: 1.4;
+      margin-bottom: 14px;
+      font-size: 0.88rem;
+      line-height: 1.5;
     }
     .impact-item { margin-bottom: 6px; }
     .impact-item:last-child { margin-bottom: 0; }
     .impact-tag-talent { color: #4deeea; font-weight: bold; }
     .impact-tag-weak { color: #ff6b6b; font-weight: bold; }
 
-    /* 相性＆メニュー */
-    .sub-info-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
+    /* 🍺 ソウルフード/おすすめメニュー表示ボックス（強調・大サイズ化） */
+    .menu-box-large {
+      background: linear-gradient(135deg, rgba(255, 153, 51, 0.15), rgba(255, 51, 102, 0.15));
+      padding: 16px 12px;
+      border-radius: 12px;
+      border: 1.5px dashed #ff9933;
+      box-shadow: inset 0 0 15px rgba(255, 153, 51, 0.1);
     }
-    .sub-box {
-      background: rgba(0, 0, 0, 0.5);
-      padding: 10px 8px;
-      border-radius: 10px;
-      border: 1px dashed rgba(255, 255, 255, 0.2);
-      font-size: 0.8rem;
+    .menu-box-title {
+      color: #ff9933;
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
     }
-    .sub-box-title { color: #ff9933; font-size: 0.75rem; margin-bottom: 4px; font-weight: bold; }
-    .sub-box-value { color: #fff; font-weight: bold; font-size: 0.9rem; }
+    .menu-box-value {
+      color: #fff;
+      font-weight: bold;
+      font-size: 1.25rem;
+      line-height: 1.35;
+      text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+    }
   </style>
 </head>
 <body>
@@ -331,7 +327,6 @@
     <div id="result-screen" class="screen">
       <div class="result-content">
         <div class="result-card">
-          <span class="category-badge" id="res-category">カテゴリ</span>
           
           <div class="hero-img-container">
             <img id="res-img" src="" alt="前世イラスト">
@@ -340,7 +335,6 @@
           <div class="past-life-title" id="res-title">称号が入ります</div>
 
           <div class="story-box">
-            <strong>📜 前世の物語:</strong><br>
             <span id="res-story">ここに短いエピソードが入ります。</span>
           </div>
 
@@ -355,16 +349,11 @@
             </div>
           </div>
 
-          <div class="sub-info-grid">
-            <div class="sub-box">
-              <div class="sub-box-title">💖 相性バツグン</div>
-              <div class="sub-box-value" id="res-match">相性の良い前世</div>
-            </div>
-            <div class="sub-box">
-              <div class="sub-box-title">🍺 愛したソウルフード</div>
-              <div class="sub-box-value" id="res-menu">メニュー名</div>
-            </div>
+          <div class="menu-box-large">
+            <div class="menu-box-title">🍺 前世あなたが愛したソウルフード</div>
+            <div class="menu-box-value" id="res-menu">メニュー名</div>
           </div>
+
         </div>
 
         <button class="btn" onclick="resetQuiz()">🔄 もう一度診断する</button>
@@ -389,103 +378,83 @@
     // 🌟 厳選10通りの豪華診断結果データ
     const results = [
       {
-        category: "王道・英雄系",
         title: "🛡️ 仲間を絶対に裏切らない<br>伝説の騎士",
         img: "result1.jpg",
         story: "中世の戦場にて、最前線で味方の盾となり王国を守り抜いた。最期は仲間の笑顔に見送られ静かに眠りについた。",
         talent: "圧倒的な正義感と、いざという時の頼りがい",
         weak: "情に厚すぎて、断れずに損をしてしまいがち",
-        match: "江戸の<br>ほっこり団子屋",
         menu: "豪快！<br>骨付きステーキ"
       },
       {
-        category: "江戸・歴史系",
         title: "🍡 商売上手な<br>江戸のほっこり団子屋",
         img: "result2.jpg",
         story: "城下町で誰もが立ち寄る名物茶屋を切り盛り。笑顔と美味いお茶で、街中の人々の悩みと空腹を癒やし続けた人生。",
         talent: "相手の懐にスッと入る抜群のコミュ力",
         weak: "お人好しで、ついついサービスしすぎてしまう",
-        match: "伝説の騎士",
         menu: "ふわふわ<br>出汁巻き卵"
       },
       {
-        category: "自由人・海賊系",
-        title: "🏴‍☠️ 嵐を恐れない 大航海時代のカリスマ船長",
+        title: "🏴‍☠️ 嵐を恐れない<br>大航海時代のカリスマ船長",
         img: "result3.jpg",
         story: "未開の海を求め、仲間と共に世界の果てまで旅をした。数々のピンチを豪快な笑いと度胸で切り抜けた伝説の大海賊。",
         talent: "常識にとらわれない直感力と決断力",
         weak: "退屈に耐えられず、じっとしているとイライラする",
-        match: "宮廷の星読み師",
         menu: "フィッシュ<br>＆チップス"
       },
       {
-        category: "動物・癒やし系",
         title: "🐾 日向ぼっこを愛する<br>気ままな街の野良猫",
         img: "result4.jpg",
         story: "港町のあちこちを散歩し、美味しいものを分けてもらいながら自由に生きた。みんなに愛された街のアイドル猫。",
         talent: "自分の心地よさを優先できる自己肯定感",
         weak: "気分屋で、急に興味を失う気まぐれさ",
-        match: "森の長老グマ",
         menu: "香ばしい<br>炙りエイヒレ"
       },
       {
-        category: "神秘・知性系",
         title: "🔮 未来を見通す<br>宮廷の星読み師",
         img: "result5.jpg",
         story: "高い塔の上で星の動きを観察し、王国の運命を導いた賢者。静かな夜空と対話しながら真理を求め続けた生涯。",
         talent: "物事の違和感や本質を一瞬で見抜く観察眼",
         weak: "考えすぎて頭がいっぱいになり不眠になりやすい",
-        match: "大航海時代の<br>カリスマ船長",
         menu: "あやしく光る<br>オリジナルカクテル"
       },
       {
-        category: "職人・情熱系",
         title: "⚙️ 密かに世界を変えた<br>からくり屋敷の発明家",
         img: "result6.jpg",
         story: "山奥の研究所で夜な夜なヘンテコな道具を作り続けた。人々をアッと言わせる瞬間を何より愛した孤高のクリエイター。",
         talent: "1つのことに没頭したときの爆発的な集中力",
         weak: "こだわりが強すぎて周りの意見を聞かなくなる",
-        match: "気ままな野良猫",
         menu: "具だくさん<br>ミックスピザ"
       },
       {
-        category: "自然・包容力系",
         title: "🐻 誰もを温かく包み込む<br>森の長老グマ",
         img: "result7.jpg",
         story: "深い森の奥で、迷い込んだ動物たちに木の実を分け与えていた。どっしり構えた姿で森の平和を守り抜いた頼れる存在。",
         talent: "いるだけで周囲に安心感を与える圧倒的包容力",
         weak: "のんびりしすぎて約束の時間に遅れがち",
-        match: "江戸のほっこり<br>団子屋",
         menu: "ソーセージ<br>盛り合わせ"
       },
       {
-        category: "海外・芸術系",
         title: "🍷 宴を華やかに彩る<br>ヴェネツィアの貴族",
         img: "result8.jpg",
         story: "水の都で夜な夜な華やかなパーティーを開催。美味しいワインと音楽を愛し、人々の笑顔に囲まれて人生を満喫した。",
         talent: "華やかな場での立ち振る舞いと高い美意識",
         weak: "見栄を張りすぎて財布の紐がゆるくなりがち",
-        match: "伝説の騎士",
         menu: "濃厚アヒージョ<br>＆ワイン"
       },
       {
-        category: "神話・ファンタジー系",
         title: "🌠 宇宙から舞い降りた<br>流れ星の旅人",
         img: "result9.jpg",
         story: "銀河を旅する途中で地球の美しさに惹かれ、しばしの滞在を楽しんだ。独特な感性で人々に笑顔と奇跡をもたらした。",
         talent: "常識の枠にハマらないユニークな発想力",
         weak: "現実的な細かい作業や書類手続きが大の苦手",
-        match: "からくり屋敷の<br>発明家",
         menu: "あつあつ！<br>揚げたこ焼き"
       },
       {
-        category: "日常・ひたむき系",
         title: "📜 一語一会を慈しむ<br>古書の街の図書委員長",
         img: "result10.jpg",
         story: "静寂に包まれた図書室で、たくさんの物語を守り続けた。ひそかに訪れる人々にぴったりの一冊を差し出すのが喜びだった。",
         talent: "じっくり物事を聞き届ける深い傾聴力",
         weak: "自己主張が得意ではなく言いたいことを呑み込みがち",
-        match: "宮廷の星読み師",
         menu: "カマンベールチーズ<br>＆クラッカー"
       }
     ];
@@ -599,14 +568,12 @@
       const index = totalScore % results.length;
       const res = results[index];
 
-      // 💡 innerHTML に変更することで <br> が正しく改行されます
-      document.getElementById('res-category').innerHTML = res.category;
+      // innerHTMLにより改行コード<br>を適用して画面へ出力
       document.getElementById('res-img').src = res.img;
       document.getElementById('res-title').innerHTML = res.title;
       document.getElementById('res-story').innerHTML = res.story;
       document.getElementById('res-talent').innerHTML = res.talent;
       document.getElementById('res-weak').innerHTML = res.weak;
-      document.getElementById('res-match').innerHTML = res.match;
       document.getElementById('res-menu').innerHTML = res.menu;
 
       document.getElementById('result-screen').classList.add('active');
