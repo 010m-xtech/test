@@ -595,20 +595,19 @@
       const day = parseInt(document.getElementById('birth-day').value);
       const birthNum = year + month + day;
       
-      // 10パターンの結果に正確に振分け（0〜9）
       const totalScore = randomScore + birthNum;
       const index = totalScore % results.length;
       const res = results[index];
 
-      // カード各要素へデータ挿入
-      document.getElementById('res-category').innerText = res.category;
+      // 💡 innerHTML に変更することで <br> が正しく改行されます
+      document.getElementById('res-category').innerHTML = res.category;
       document.getElementById('res-img').src = res.img;
-      document.getElementById('res-title').innerText = res.title;
-      document.getElementById('res-story').innerText = res.story;
-      document.getElementById('res-talent').innerText = res.talent;
-      document.getElementById('res-weak').innerText = res.weak;
-      document.getElementById('res-match').innerText = res.match;
-      document.getElementById('res-menu').innerText = res.menu;
+      document.getElementById('res-title').innerHTML = res.title;
+      document.getElementById('res-story').innerHTML = res.story;
+      document.getElementById('res-talent').innerHTML = res.talent;
+      document.getElementById('res-weak').innerHTML = res.weak;
+      document.getElementById('res-match').innerHTML = res.match;
+      document.getElementById('res-menu').innerHTML = res.menu;
 
       document.getElementById('result-screen').classList.add('active');
     }
